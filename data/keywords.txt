@@ -1,0 +1,454 @@
+本科申请关键词库｜国际课程、毕业资格、考试与成绩字段扩充版
+检索核对日期：2026-10-20
+字段配置更新日期：2026-10-21
+
+用途与范围
+本文件是检索词库，供以后从招生文件中定位申请资格、课程、文凭、科目、成绩和认证要求。
+2026-10-21已依据aohb27.pdf完成项目要求提取。本文件保存检索词与字段定义，具体院校门槛另见项目要求表。
+原有关键词全部保留。国际资格名称来自教育部门、考试机构、课程颁发机构及大学的资格目录；本次新增F021–F025依据用户确认与招生手册S47。
+大学资格目录仅用于核对名称；目录所在大学的接受/不接受结论、分数要求不移用于其他大学。
+国际课程、毕业文凭、学术考试、同等学力、预科、职业资格、学分/排名和认证分别标明。
+同一缩写须结合国家、地区、颁发机构、资格层级和年份识别。正式名称与简称不一定是一对一关系。
+地方证书、历史名称和新资格继续通过“Other Qualifications / 原文资格名称”字段收录；本清单不是全球资格的封闭登记库。
+科目清单是检索入口，不限定申请人只能使用列出的科目；具体科目名称须保留原文。
+
+一、原有核心关键词（全部保留）
+GPA Requirement
+Academic Transcripts
+Certificate of Graduation
+Credential Verification
+Minimum Score
+Overall Score
+Section Score
+Score Validity
+Score Waiver
+TOEFL iBT
+IELTS
+English Language Proficiency
+Proof of English Proficiency
+TOEIC Listening & Reading Test
+PTE Academic
+Duolingo English Test (DET)
+Cambridge B2 First
+Cambridge C1 Advanced
+Cambridge C2 Proficiency
+SAT Evidence-Based Reading and Writing (EBRW)
+ACT English Score
+
+二、国际课程、地区文凭及学术考试名称
+格式：编号｜地区/体系｜类型｜名称、缩写与检索变体｜说明｜来源
+
+【跨国体系与英国、爱尔兰】
+Q001｜跨国IB｜课程/文凭｜International Baccalaureate Diploma Programme；IB；IBDP；IB DP；IB Diploma；Diplôme du Baccalauréat International｜保留完整文凭与单科成绩的区别｜S01、S06
+Q002｜跨国IB｜单科成绩｜IB DP Course Results；IB Certificate；IB Subject Results；IB Courses｜不得仅凭“IB”将单科成绩视为完整IB Diploma｜S01、S45
+Q003｜跨国IB｜职业相关课程｜IB Career-related Programme；IBCP；IB CP｜单独记录资格类型｜S01
+Q004｜英制/国际｜课程/考试资格｜A-Level；A Level；ALEVEL；AL；GCE Advanced Level；GCE A-Level；International A-Level；International Advanced Level；IAL｜兼容连字符、空格和大小写｜S02、S03、S05、S19
+Q005｜英制/国际｜课程/考试资格｜AS Level；AS-Level；Advanced Subsidiary；International AS Level；IAS｜与完整A-Level分别记录｜S02、S03
+Q006｜英制/国际｜考试局/颁发机构词｜Cambridge International；CAIE；CIE；Pearson Edexcel；Edexcel；OxfordAQA；Oxford International AQA；AQA；OCR；WJEC；CCEA；Eduqas｜机构名称是上下文，不能代替资格名称｜S05、S19、S34
+Q007｜剑桥体系｜课程/综合文凭｜Cambridge AICE Diploma；AICE；Advanced International Certificate of Education｜关联AS/A-Level科目、学分及文凭等级｜S02
+Q008｜剑桥体系｜历史资格｜Cambridge Pre-U；Pre-U Diploma；Pre-U Principal Subjects；Global Perspectives and Research；GPR｜保留旧材料检索；已撤销的资格｜S02
+Q009｜英制/国际｜较早学段资格｜GCSE；General Certificate of Secondary Education｜与A-Level层级分别记录｜S05、S34
+Q010｜英制/国际｜较早学段资格｜IGCSE；International GCSE；International General Certificate of Secondary Education｜关注英语、数学及其他先修科目｜S02、S05
+Q011｜英制及地区体系｜较早学段资格｜GCE Ordinary Level；GCE O-Level；O Level；O-Level｜结合国家和考试局识别｜S19、S20
+Q012｜英国｜补充项目资格｜Extended Project Qualification；EPQ｜与主申请资格分别记录｜S34
+Q013｜国际｜补充项目资格｜International Project Qualification；IPQ；Cambridge IPQ；OxfordAQA IPQ｜与主申请资格分别记录｜S05、S34
+Q014｜英国｜职业/应用资格｜BTEC；BTEC National；BTEC Nationals；BTEC Level 3；National Diploma；National Extended Diploma；Extended Certificate｜保留完整资格名称、Level及大小｜S04、S34
+Q015｜国际BTEC｜职业/应用资格｜BTEC International Level 3；Certificate；Subsidiary Diploma；Foundation Diploma；Diploma；Extended Diploma｜区分不同资格大小与所需组合｜S04
+Q016｜英国｜职业/应用资格｜OCR Cambridge Technicals；Cambridge Technical Diploma；Cambridge Technical Extended Diploma｜记录Level、科目和整体等级｜S34
+Q017｜英国｜技术资格｜T Level；T-Level；T Levels｜与A-Level、BTEC分别记录｜S34
+Q018｜苏格兰｜高中资格｜Scottish Higher；Scottish Highers；Higher｜识别苏格兰背景，避免将普通“higher”误匹配｜S34
+Q019｜苏格兰｜高中资格｜Advanced Higher；Scottish Advanced Highers｜与Higher分别记录｜S34
+Q020｜苏格兰｜综合资格｜Scottish Baccalaureate；Interdisciplinary Project｜保留组成科目及项目成绩｜S34
+Q021｜威尔士｜综合/技能资格｜Welsh Baccalaureate；Welsh Bacc；Skills Challenge Certificate；Advanced Skills Baccalaureate Wales｜保留名称、版本及颁发年份，不自动合并不同版本｜S34、S42
+Q022｜英国｜成人升学衔接资格｜Access to HE Diploma；Access to Higher Education Diploma；Access Course｜单列课程、学分和成绩｜S34
+Q023｜爱尔兰｜高中毕业/升学考试｜Irish Leaving Certificate；Leaving Certificate；Leaving Certificate Established；Higher Level；Ordinary Level｜与IB的HL/SL按体系区分｜S05、S34
+
+【美国体系】
+Q024｜美国｜高中毕业文凭｜American High School Diploma；US High School Diploma；U.S. High School Diploma；High School Graduation Diploma；High School Diploma｜记录学校、州、学制和毕业证明｜S19
+Q025｜美国/国际｜学术课程/考试｜Advanced Placement；AP；AP Course；AP Exam；AP Test；AP Exam Score｜按科目逐项记录｜S07
+Q026｜美国/国际｜补充课程/奖励文凭｜AP Capstone Diploma；AP Seminar and Research Certificate；AP Seminar；AP Research｜与高中毕业证分别记录｜S08
+Q027｜美国/国际｜标准化考试｜SAT；Digital SAT；SAT Reasoning Test；Scholastic Assessment Test｜区分总分、Reading and Writing、Math、旧EBRW名称｜S09
+Q028｜美国/国际｜标准化考试｜ACT；ACT Test；Enhanced ACT；ACT with Writing｜保留考试版本、Composite、各科和Writing｜S10
+Q029｜美国等｜同等学力｜GED；General Educational Development；GED Test；High School Equivalency Diploma；HSE｜与普通高中就读文凭分别记录｜S11
+Q030｜美国｜同等学力｜HiSET；High School Equivalency Test｜按考试及颁发地区记录｜S12
+
+【加拿大：省、地区及境外授课项目】
+Q031｜安大略省｜高中毕业文凭｜OSSD；Ontario Secondary School Diploma；安省高中毕业文凭；安大略省高中毕业文凭｜关联Grade 12、4U/4M、学分、OSSLT、OSSLC｜S13
+Q032｜加拿大课程境外项目｜课程项目名称｜CIMP；Canadian International Matriculation Programme；Canadian International Matriculation Program｜记录课程项目名及最终颁发文凭；检索OSSD｜S15
+Q033｜加拿大课程境外项目｜课程项目名称｜CPU；Canadian Pre-University；Canadian Pre University｜课程品牌/项目名称；须从原文核对最终颁发文凭｜S41
+Q034｜不列颠哥伦比亚省｜高中毕业文凭｜British Columbia Certificate of Graduation；BC Certificate of Graduation；Dogwood Diploma；BC Diploma；BC省高中毕业文凭｜境内与Offshore School背景均可检索｜S14
+Q035｜不列颠哥伦比亚省｜成人高中毕业文凭｜British Columbia Adult Graduation Diploma；BCAGD；Adult Dogwood｜与普通Dogwood分别记录｜S14A
+Q036｜阿尔伯塔省｜高中毕业文凭｜Alberta High School Diploma；Alberta Diploma｜关联Grade 12、30-level、31、Diploma Examinations｜S16
+Q037｜曼尼托巴省｜高中毕业文凭｜Manitoba High School Diploma｜关联Grade 12、40S等课程级别｜S16
+Q038｜萨斯喀彻温省｜高中完成资格/成绩记录｜Saskatchewan Transcript of Secondary Level Achievement；Saskatchewan Grade 12｜保留文凭与成绩记录原名｜S05
+Q039｜新不伦瑞克省｜高中毕业文凭｜New Brunswick High School Diploma｜省份必须保留｜S05
+Q040｜新斯科舍省｜高中毕业文凭｜Nova Scotia High School Graduation Diploma；Nova Scotia High School Completion Certificate｜保留原文名称｜S05、S16
+Q041｜纽芬兰与拉布拉多省｜高中毕业文凭｜Newfoundland and Labrador High School Graduation Diploma｜省份必须保留｜S05
+Q042｜爱德华王子岛省｜高中毕业文凭｜Prince Edward Island High School Graduation Diploma；PEI High School Diploma｜省份必须保留｜S05
+Q043｜西北地区｜高中毕业文凭｜Northwest Territories High School Diploma｜地区必须保留｜S05
+Q044｜努纳武特地区｜高中毕业文凭｜Nunavut Secondary School Graduation Diploma；Nunavut Secondary School Diploma｜地区必须保留｜S05
+Q045｜育空地区｜高中毕业文凭｜Yukon Graduation Diploma；Yukon High School Diploma｜地区必须保留｜S05
+Q046｜魁北克省｜中学毕业文凭｜DES；Diplôme d'études secondaires；Secondary School Diploma；魁北克中学毕业文凭｜DES与香港DSE分开；不得仅凭缩写确定学制｜S17
+Q047｜魁北克省｜学院阶段资格｜DEC；Diplôme d'études collégiales；Diploma of College Studies；DCS；CEGEP；Cégep｜分别检索Pre-university与Technical，不与DES合并｜S18
+Q048｜魁北克省｜职业资格｜DEP；Diplôme d'études professionnelles｜与普通中学及大学预科路径分别记录｜S17
+Q049｜魁北克省｜学院继续教育资格｜AEC；Attestation d'études collégiales｜单列资格层级，不视为DES或DEC同义词｜S18
+
+【澳大利亚与新西兰】
+Q050｜澳大利亚新南威尔士州｜高中毕业资格｜HSC；Higher School Certificate；NSW HSC｜HSC缩写必须结合地区识别｜S21
+Q051｜澳大利亚维多利亚州｜高中毕业资格｜VCE；Victorian Certificate of Education｜记录科目、Units和Study Score｜S21
+Q052｜澳大利亚昆士兰州｜高中毕业资格｜QCE；Queensland Certificate of Education｜与ATAR分别记录｜S21
+Q053｜澳大利亚南澳州｜高中毕业资格｜SACE；South Australian Certificate of Education｜关注Stage 1、Stage 2和科目成绩｜S21
+Q054｜澳洲课程境外项目｜课程项目名称｜SACE International；South Australian Matriculation；SAM｜SACE International的旧名称SAM也保留｜S22
+Q055｜澳大利亚西澳州｜高中毕业资格｜WACE；Western Australian Certificate of Education｜与AUSMAT课程品牌、ATAR分别记录｜S21、S23
+Q056｜澳洲课程境外项目｜课程项目名称｜AUSMAT；Australian Matriculation｜关联WACE，最终颁发资格须核对原文｜S23
+Q057｜澳大利亚塔斯马尼亚州｜高中毕业资格｜TCE；Tasmanian Certificate of Education｜保留地区与科目｜S21
+Q058｜澳大利亚北领地｜高中毕业资格｜NTCET；Northern Territory Certificate of Education and Training｜保留地区｜S21
+Q059｜澳大利亚首都领地｜高中毕业资格｜ACT Senior Secondary Certificate；ACTSSC；Australian Capital Territory Senior Secondary Certificate｜这里的ACT不是美国ACT考试｜S21
+Q060｜澳大利亚｜升学排名字段｜ATAR；Australian Tertiary Admission Rank；Selection Rank；Adjusted ATAR｜属于排名指标，与文凭及考试分数分列｜S24
+Q061｜新西兰｜中学资格｜NCEA；National Certificate of Educational Achievement；NCEA Level 1；NCEA Level 2；NCEA Level 3｜各Level分别记录｜S25
+Q062｜新西兰｜大学入学资格｜University Entrance；UE；NZQA；Record of Achievement；NZROA｜NZQA是机构；记录UE状态、科目和学分｜S25
+
+【中国内地、香港、澳门、台湾及日本、韩国】
+Q063｜香港｜中学文凭考试｜DSE；HKDSE；Hong Kong Diploma of Secondary Education；香港中学文凭；香港中學文憑考試｜兼容用户可能将DSE写成DES的情况，但不可自动等同魁北克DES｜S26
+Q064｜香港｜历史资格｜HKALE；Hong Kong Advanced Level Examination；HKAL；香港高级程度会考｜历史名称单列｜S26
+Q065｜香港｜历史资格｜HKCEE；Hong Kong Certificate of Education Examination；香港中学会考｜与HKDSE分别记录｜S26
+Q066｜中国内地｜高中毕业资格｜普通高中毕业证；普通高中毕业证书；Senior High School Graduation Diploma；Senior High School Diploma｜与高考、会考成绩分列｜S05、S06
+Q067｜中国内地｜升学考试｜Gaokao；Gao Kao；National College Entrance Examination；NCEE；高考；普通高等学校招生全国统一考试｜记录科目、总分、满分、省份与年份｜S05、S35
+Q068｜中国内地｜学业考试｜Huikao；Hui Kao；Academic Proficiency Test；Academic Achievement Test；学业水平考试；会考；合格考；选择性考试｜不同省份及制度不自动合并｜S35
+Q069｜澳门｜高中毕业资格｜Senior Secondary Graduation Certificate；高中畢業證書；澳门高中毕业证｜记录学校及学制｜S06
+Q070｜台湾｜高中毕业资格｜Senior High School Leaving Certificate；Senior High School Diploma；高級中等學校畢業證書｜记录学校、课程及毕业状态｜S05
+Q071｜日本｜高中毕业资格｜Upper Secondary School Leaving Certificate；Kotogakko Sotsugyo Shomeisho；高等学校卒業証明書；高等学校卒業｜与成绩证明、预计毕业证明分列｜S06、S36
+Q072｜日本｜同等学力｜High School Equivalency Examination；高等学校卒業程度認定試験；高卒認定；高認｜与普通高中毕业资格分列｜S36
+Q073｜日本｜留学生升学考试｜EJU；Examination for Japanese University Admission for International Students；日本留学試験｜记录日语、综合科目、数学及理科；仅为检索字段｜S37
+Q074｜韩国｜高中毕业资格｜General High School Diploma；Ilbangye Godeunghakgyo Joreopjang；고등학교 졸업장｜保留原文资格名称｜S06
+Q075｜韩国｜高中同等学力｜High School Graduation Equivalency Examination；Geomjeonggosi；검정고시｜不能仅凭GED简称等同美国GED｜S06
+
+【新加坡、马来西亚及南亚、东南亚】
+Q076｜新加坡｜考试资格｜Singapore-Cambridge GCE A-Level；Singapore A-Level；Singapore A Levels｜保留H1、H2、H3及General Paper等科目｜S20
+Q077｜新加坡｜学校文凭｜NUS High School Diploma；NUS High School Diploma in Mathematics and Science｜与新加坡A-Level分别记录｜S05、S20
+Q078｜新加坡｜课程路径｜Integrated Programme；IP｜课程路径词，最终资格另记｜S20
+Q079｜新加坡｜理工学院资格｜Singapore Polytechnic Diploma；Local Polytechnic Diploma｜单列非高中资格层级｜S05、S20
+Q080｜新加坡｜中学资格｜Singapore-Cambridge Secondary Education Certificate；SEC；G1；G2；G3｜保留2027年起新名称，与旧O/N-Level按年份区分｜S20A
+Q081｜马来西亚｜高中后升学资格｜STPM；Sijil Tinggi Persekolahan Malaysia；Malaysian Higher School Certificate｜记录科目、单科等级和CGPA｜S27
+Q082｜马来西亚｜独中统考资格｜UEC；Unified Examination Certificate；Senior Middle UEC；Senior Middle Three；高中统考；独中统考｜区分Senior与Junior层级｜S05、S28
+Q083｜马来西亚｜中学资格｜SPM；Sijil Pelajaran Malaysia；Malaysian Certificate of Education｜与STPM、UEC分别记录｜S27
+Q084｜马来西亚｜宗教教育升学资格｜STAM；Sijil Tinggi Agama Malaysia｜保留资格类别｜S27
+Q085｜马来西亚｜预科/衔接课程｜Malaysian Matriculation；Program Matrikulasi；Sijil Matrikulasi；Asasi；Foundation｜不同课程和颁发机构分别记录｜S27
+Q086｜印度｜高中资格｜CBSE；Class XII；Standard XII；All India Senior School Certificate；AISSCE；AISSC；Senior School Certificate Examination｜CBSE是考试机构，资格名称与年级分别记录｜S19、S06
+Q087｜印度｜高中资格｜ISC；Indian School Certificate；CISCE；Class XII｜与Class X的ICSE分别记录｜S19
+Q088｜印度｜地方高中资格｜State Board；Higher Secondary Certificate；Higher Secondary School Certificate；Intermediate；Pre-University Certificate；PUC；Standard 12｜必须保留邦、考试局、年级及正式证书名称｜S06
+Q089｜巴基斯坦｜高中资格｜HSSC；Higher Secondary School Certificate；Intermediate｜与其他国家HSSC分别记录｜S06
+Q090｜孟加拉国｜高中资格｜HSC；Higher Secondary Certificate；Alim｜与澳洲HSC分别记录｜S06
+Q091｜斯里兰卡｜升学考试资格｜Sri Lanka GCE Advanced Level；Sri Lankan A-Level；Sri Lanka Advanced Level｜与英国、新加坡A-Level分别记录｜S05
+Q092｜尼泊尔｜高中资格｜NEB；National Examination Board；School Leaving Certificate Examination Grades XI and XII；Grade 12；Higher Secondary Education Board；HSEB｜保留年级及颁发年份，SLC缩写本身不足以判定层级｜S06
+Q093｜印度尼西亚｜高中资格｜Ijazah；Sekolah Menengah Atas；SMA；Madrasah Aliyah；MA｜保留学校类型与学历层级｜S05、S06
+Q094｜泰国｜高中资格｜Mathayom Suksa 6；Matayom 6；M6；Upper Secondary School Certificate｜保留原文拼写变体｜S05
+Q095｜越南｜高中资格｜Bằng tốt nghiệp trung học phổ thông；Bang Tot Nghiep THPT；Tot Nghiep Pho Thong Trung Hoc；Upper Secondary School Graduation Certificate｜兼容有无变音符号｜S05
+Q096｜菲律宾｜高中资格｜Senior High School Diploma；Certificate of Senior High School；Katibayan；K-12；Academic Track｜保留学制和Track｜S06
+Q097｜缅甸｜高中毕业/升学考试｜Basic Education High School Examination；Matriculation Examination｜记录制度及年份｜S06
+Q098｜老挝｜高中资格｜Upper Secondary School Diploma｜国家和正式证书原名必须保留｜S06
+Q099｜蒙古｜高中资格｜Certificate of Complete Secondary Education；Büren Dund Bolovsrolyn Ünemlekh｜保留国家和文凭原名｜S06
+
+【欧洲主要国别资格】
+Q100｜欧洲学校体系｜综合高中毕业资格｜European Baccalaureate；EB；European Bac；欧洲文凭｜与IB、法国Bac分别记录｜S29
+Q101｜法国｜高中毕业资格｜French Baccalaureate；Baccalauréat général；Baccalaureat General；French Bac｜保留学术/技术/职业分支原文｜S05、S30
+Q102｜法国｜国际选项｜Baccalauréat Français International；BFI｜法国体系内的国际选项｜S30
+Q103｜法国｜历史国际选项名称｜Option Internationale du Baccalauréat；OIB｜旧称与BFI关联，但保留年份｜S30
+Q104｜德国｜高中毕业/大学入学资格｜Abitur；Allgemeine Hochschulreife；Zeugnis der Allgemeinen Hochschulreife｜保留文凭原名｜S05、S31
+Q105｜德国海外学校｜高中毕业/大学入学资格｜Deutsches Internationales Abitur；DIA；German International Abitur｜与IB及其他德国资格分别记录｜S31
+Q106｜奥地利｜高中资格｜Matura；Maturazeugnis；Reifeprüfungszeugnis｜Matura必须结合国家识别｜S05
+Q107｜瑞士/列支敦士登｜高中资格｜Matura；Maturität；Maturité；Maturità｜学术、专业等类型保留原文｜S05
+Q108｜比利时｜高中资格｜CESS；Certificat d'enseignement secondaire supérieur；Diploma van secundair onderwijs｜保留语言区和资格原名｜S05
+Q109｜荷兰｜高中资格｜VWO；Voorbereidend Wetenschappelijk Onderwijs；VWO Diploma｜记录学校类型及层级｜S43
+Q110｜意大利｜高中毕业考试资格｜Diploma di Esame di Stato；Esame di Stato；Maturità｜保留学校分支和科目｜S05
+Q111｜西班牙｜高中资格｜Título de Bachiller；Bachillerato｜结合国家识别，避免与拉美同名资格混淆｜S05
+Q112｜葡萄牙｜高中资格｜Diploma de Ensino Secundário；Certificado de Ensino Secundário｜保留文凭和国家｜S05
+Q113｜丹麦｜高中资格｜Studentereksamen；STX；HHX；HTX；HF｜记录资格分支与科目Level｜S05
+Q114｜芬兰｜高中升学资格｜Ylioppilastutkintotodistus；Studentexamensbetyg；Finnish Matriculation Examination｜保留科目及等级｜S05
+Q115｜瑞典｜高中资格｜Gymnasieexamen；Högskoleförberedande examen｜区分大学预备与其他分支｜S05
+Q116｜挪威｜高中资格｜Vitnemål；Vitnemål fra den Videregående opplæring｜保留证书全称｜S05
+Q117｜冰岛｜高中资格｜Stúdentspróf；Studentsprof｜兼容变音符号｜S05
+Q118｜波兰｜高中毕业考试资格｜Matura；Polish Matura；Świadectwo Dojrzałości｜保留基础/提高层级｜S05
+Q119｜捷克/斯洛伐克｜高中毕业考试资格｜Maturita；Maturitni Zkouška；Maturitná Skúška｜分别记录国家｜S05
+Q120｜匈牙利｜高中毕业考试资格｜Érettségi；Erettsegi；Matura｜记录普通与提高层级｜S05
+Q121｜罗马尼亚/摩尔多瓦｜高中资格｜Diploma de Bacalaureat；Diplomă de Bacalaureat｜分别记录国家｜S05
+Q122｜保加利亚｜高中资格｜Diploma za Sredno Obrazovanie｜保留原文资格名称｜S05
+Q123｜希腊/塞浦路斯｜高中资格｜Apolytirion；Apolytirio Lykeiou｜分别记录国家及其他附带考试｜S05、S06
+Q124｜克罗地亚/斯洛文尼亚/塞尔维亚等｜高中毕业考试资格｜Matura；Maturski ispit；Maturalna Svjedodzba；Secondary School Leaving Diploma｜不跨国家自动等同｜S05
+Q125｜立陶宛｜高中资格｜Brandos Atestatas｜记录国家考试和校内科目｜S05
+Q126｜拉脱维亚｜高中资格｜Atestāts par vispārējo vidējo izglītību｜保留完整原名｜S05
+Q127｜爱沙尼亚｜高中资格｜Gümnaasiumi lõputunnistus；Riigieksam｜文凭与国家考试分列｜S05
+Q128｜卢森堡｜高中资格｜Diplôme de fin d'études secondaires｜保留国家和文凭原名｜S05
+Q129｜马耳他｜升学资格｜Matriculation Certificate；Advanced Matriculation｜记录Advanced/Intermediate科目｜S05
+
+【非洲、加勒比与拉丁美洲】
+Q130｜南非｜高中资格｜National Senior Certificate；NSC；Senior Certificate；Matric｜IEB、Umalusi等机构信息另列｜S32
+Q131｜西非｜中学毕业考试｜WASSCE；West African Senior School Certificate Examination；WAEC｜WAEC是机构，国家与考试名称另记｜S05、S06
+Q132｜尼日利亚｜中学毕业考试｜SSCE；Senior School Certificate Examination；NECO｜颁发机构、国家和年份分别记录｜S06
+Q133｜肯尼亚｜中学资格｜KCSE；Kenya Certificate of Secondary Education｜记录科目及总评｜S05
+Q134｜乌干达｜高中升学资格｜UACE；Uganda Advanced Certificate of Education｜与其他中学层级分别记录｜S05
+Q135｜坦桑尼亚｜高中升学考试｜ACSEE；Advanced Certificate of Secondary Education Examination｜记录科目组合及成绩｜S05
+Q136｜喀麦隆｜高中升学考试｜Cameroon GCE A-Level；Cameroon Advanced Level｜与其他国家A-Level分别记录｜S05
+Q137｜毛里求斯｜高中升学资格｜Mauritius HSC；Higher School Certificate；Cambridge HSC｜结合国家识别HSC｜S05
+Q138｜北非及法语国家｜高中资格｜Baccalauréat；Baccalauréat de l'Enseignement Secondaire；Baccalauréat Général；Baccalauréat Technique｜摩洛哥、突尼斯、阿尔及利亚、塞内加尔等分别记录国家及分支｜S05、S06
+Q139｜纳米比亚｜中学资格｜Namibia Senior Secondary Certificate；NSSC｜保留具体层级后缀｜S05
+Q140｜马拉维｜中学资格｜MSCE；Malawi School Certificate of Education｜保留国家｜S05
+Q141｜赞比亚｜中学资格｜Zambia School Certificate｜保留国家｜S05
+Q142｜加勒比地区｜升学考试/资格｜CAPE；Caribbean Advanced Proficiency Examination；CAPE Diploma｜保留Unit 1/Unit 2和科目｜S33
+Q143｜加勒比地区｜中学资格｜CSEC；Caribbean Secondary Education Certificate；CXC｜CXC是机构，CSEC与CAPE分列｜S33
+Q144｜巴西｜高中资格/升学考试词｜Certificado de Ensino Médio；ENEM；Vestibular｜毕业文凭与升学考试分别记录｜S05
+Q145｜墨西哥及部分拉美国家｜高中资格｜Bachillerato；Bachillerato General；Diploma de Bachiller；Título de Bachiller｜国家、分支及资格层级必须保留｜S05、S06
+Q146｜智利｜高中资格｜Licencia de Educación Media｜保留国家｜S05
+Q147｜哥伦比亚｜高中资格｜Diploma de Bachiller；Bachillerato｜保留国家及学校｜S05
+Q148｜秘鲁｜高中资格｜Certificado de Educación Secundaria；Certificado de Educación Secundaria Común Completa｜保留原文名称｜S05
+Q149｜乌拉圭/委内瑞拉｜高中资格｜Título de Bachillerato Diversificado；Título de Bachiller｜分别记录国家｜S05
+
+【中东、中亚、东欧与太平洋补充】
+Q150｜以色列｜高中升学资格｜Bagrut｜记录科目及Units｜S05
+Q151｜土耳其｜高中资格｜Lise Diploması；Devlet Lise Diplomasi；Lise Bitirme Diplomasi｜保留学校及分支｜S05
+Q152｜约旦/巴勒斯坦等｜高中资格｜Tawjihi；al-Tawjīhī；General Secondary Education Certificate｜不同国家分别记录｜S05、S06
+Q153｜沙特/阿联酋等｜高中资格｜Tawjihiyah；Tawjihiyya；GSEC；General Secondary Education Certificate｜缩写和拼写相同也须按国家识别｜S05、S06
+Q154｜埃及｜高中资格｜Thanaweya A'ama；Thanaweya Amma；General Secondary School Certificate｜保留学术/宗教等分支原文｜S06
+Q155｜伊拉克｜高中资格｜Sixth Form Baccalauréat；Certificate of Preparatory Education｜结合国家识别“Preparatory”所指层级｜S06
+Q156｜伊朗｜高中资格｜National High School Diploma；Diplom-Motevaseteh｜保留学制和证书年份｜S06
+Q157｜黎巴嫩｜高中资格｜Baccalauréat Libanais；Lebanese Baccalaureate；General Secondary School Certificate｜与法国Bac分别记录｜S06
+Q158｜阿曼｜高中资格｜General Education Diploma｜按国家识别，不能因GED字样等同美国GED考试｜S06
+Q159｜卡塔尔/科威特等｜高中资格｜Qatar Senior School Certificate；QSSC；General Secondary Education Certificate；Shahadat-al-thanawia-al-a'ama｜分别记录国家与正式资格名｜S05、S06
+Q160｜俄罗斯等｜高中资格｜Attestat；Attestat o Srednem Obrazovanii；Certificate of Secondary Education｜同类译名必须结合国家和学制｜S05、S06
+Q161｜乌克兰｜高中资格｜Svidotstvo pro zdobuttya povnoyi zahalnoyi serednoyi osvity；Atestat pro povnu zagal'nu serednyu osvitu｜保留新旧名称与年份｜S05
+Q162｜哈萨克斯坦｜高中资格｜Attestat；Nazarbayev Intellectual Schools Grade 12 Certificate；NIS Grade 12｜普通国家证书与NIS资格分列｜S06
+Q163｜乌兹别克斯坦｜中学/高中资格｜Academic Lyceum Diploma；Akademik litsey diplomi；Certificate of General Secondary Education；Professional College Diploma｜分别记录资格类型和学制｜S06
+Q164｜斐济｜高中资格｜Fiji Year 13 Certificate；Fiji School Leaving Certificate｜保留Year及资格版本｜S06
+Q165｜太平洋地区｜高中资格｜South Pacific Form Seven Certificate；Samoa Secondary Leaving Certificate；Papua New Guinea Higher School Certificate；Upper Secondary School Certificate｜分别记录颁发地区｜S05、S06
+
+【预科、衔接和特殊学习方式】
+Q166｜跨国｜预科｜International Foundation Year；IFY；International Foundation Programme；IFP；Foundation Studies；University Foundation Programme；University Preparatory Programme；Pre-University Programme｜记录课程机构、资格层级及最终证书｜S05、S38
+Q167｜NCUK｜预科｜NCUK International Foundation Year；NCUK IFY｜保留科目模块、学术英语及最终成绩｜S38
+Q168｜日本｜指定预备课程｜Preparatory Education Course；Pre-university Preparatory Course；文部科学大臣指定準備教育課程；準備教育課程｜与普通Foundation分别记录｜S36
+Q169｜各国｜学习方式字段｜Homeschool；Home School；Home Education；Online High School；Distance Learning；Correspondence Course；通信制；在家教育；线上高中｜学习方式字段，不自动判定文凭效力｜字段设计
+Q170｜各国｜跨境及双文凭字段｜Offshore School；Overseas Campus；International Division；Dual Diploma；Double Diploma；Dual Curriculum；境外办学；国际部；双学籍；双文凭｜最终颁发文凭、颁发学校和认可状态分别记录｜字段设计
+
+【补充核对：历史考试与其他路径】
+Q171｜美国/国际｜历史学科考试｜SAT Subject Tests；SAT II；Achievement Tests｜已于2021年停办；保留旧材料与历史成绩检索｜S44
+Q172｜荷兰｜高中资格｜HAVO；Hoger Algemeen Voortgezet Onderwijs；HAVO Diploma｜与VWO分列，不自动等同｜S43
+Q173｜澳大利亚相关预科｜课程项目名称｜MUFY；Monash University Foundation Year；UNSW Foundation Studies；Trinity College Foundation Studies；Australian Universities Foundation Programmes｜机构与课程名称分别记录；与Year 12文凭分列｜S46
+
+三、通用识别、成绩及新增申请字段
+以下词组与上面的课程/资格名称组合检索；不填写任何学校的具体门槛。
+
+F001｜资格识别｜Qualification Name；Original Qualification Name；Qualification Type；Curriculum；Awarding Body；Exam Board；Country；Region；Province；School Type；Credential Level；原文资格名称；课程体系；考试局；颁发机构；国家地区；资格层级
+F002｜是否接受｜Accepted Qualifications；Recognised Qualifications；Recognized Qualifications；Eligible Qualifications；Not Accepted；Not Eligible；Case-by-case；Subject to Review；是否接受；个别审查
+F003｜总分｜Total Score；Overall Score；Composite Score；Aggregate Score；Overall Average；Average Mark；Average Grade；Percentage；总分；平均分；综合分
+F004｜单科｜Subject Score；Subject Grade；Section Score；Component Score；Minimum Subject Score；Minimum Grade；单科最低分；单项最低分；科目等级
+F005｜分数口径｜Score Scale；Grading Scale；Maximum Score；Out of；Full Marks；Raw Score；Scaled Score；Percentile；Rank；满分；计分量表；排名
+F006｜必修与先修｜Required Subjects；Compulsory Subjects；Core Subjects；Prerequisite Subjects；Subject Prerequisites；Required Courses；Assumed Knowledge；必修科目；先修科目
+F007｜选科｜Elective Subjects；Optional Subjects；Subject Combination；Relevant Subjects；Recommended Subjects；Excluded Subjects；选修；选科组合；不计入科目
+F008｜科目数量｜Number of Subjects；Minimum Number of Subjects；Number of Exams；Best Subjects；Best Five；Best Six；Top Subjects；科目数；计分科目数；最佳若干科
+F009｜学分｜Credits；Credit Requirements；Compulsory Credits；Optional Credits；Transfer Credits；Equivalent Credits；Units；Minimum Credits；学分；必修学分；转换学分
+F010｜等级｜Grade；Grade Combination；Letter Grade；Points；Distinction；Merit；Pass；Fail；Unclassified；Attained；Unattained；等级组合；达标；未达标
+F011｜成绩状态｜Predicted Grades；Predicted Scores；Expected Grades；Provisional Results；Final Results；Actual Results；Pending Results；Achieved Grades；预估成绩；最终成绩
+F012｜成绩期限｜Test Date；Exam Session；Examination Year；Score Validity；Validity Period；Date of Award；Results Release；Submission Deadline；考试年份；有效期
+F013｜多次成绩｜Superscore；Single Sitting；Same Sitting；Multiple Sittings；Combined Results；Retake；Resit；Highest Score；Best Score；拼分；重考；同次考试
+F014｜评分版本｜Test Version；Old Syllabus；New Syllabus；Legacy Qualification；Formerly Known As；Replaced By；Withdrawn Qualification；旧称；新制；停办；替代
+F015｜成绩证明｜Official Transcript；Academic Transcript；Official Score Report；Statement of Results；Statement of Marks；Mark Sheet；Grade Report；Certificate of Results；成绩单；成绩证明
+F016｜送分｜Direct Submission；Send Scores；Electronic Score Report；School-issued；Exam Board-issued；Certified Copy；Official Copy；机构直送；学校出具；认证副本
+F017｜GPA｜Grade Point Average；GPA；CGPA；Cumulative GPA；Weighted GPA；Unweighted GPA；Grade Conversion；Class Rank；Percentage Average；加权GPA；不加权GPA
+F018｜附加课程｜Additional Qualification；Supplementary Qualification；Research Project；Extended Project；Capstone；Portfolio；附加资格；研究项目
+F019｜课程水平｜Higher Level；Standard Level；Advanced Level；Advanced Subsidiary；H1；H2；H3；Grade 11；Grade 12；Year 12；Year 13；Level 3；课程层级
+F020｜未列资格｜Other Qualifications；Other International Qualifications；Other National Qualifications；School-leaving Qualifications；National Curriculum；Country-specific Qualifications；Equivalent Qualifications；Other Recognised Credentials；未列资格；其他国家高中毕业资格
+
+F021｜年龄｜Age Requirement；Minimum Age；Age at Enrollment；have reached 18 years of age；年龄要求；最低年龄；年龄判定日
+F022｜国籍及签证｜Nationality；Citizenship；Dual Citizenship；Visa；Status of Residence；Residence Status；Permanent Resident；Permanent Humanitarian Visa；Student Visa；Domestic Student；International Student；国籍；多国籍；签证；在留资格；居留身份
+F023｜多项目及多轮申请规则｜Applying to Multiple Programs；Multiple Application Periods；Multiple Applications；Reapplication；Reapply；Reuse a Letter of Reference；并行申请；重复申请；再次申请；多轮申请；材料复用
+F024｜学费｜Tuition；Tuition Fee；Tuition Fees；Annual Tuition；Semester Tuition；学费；年度学费；学期学费
+F025｜其他证明材料｜Supporting Documents；Additional Documents；Passport；Birth Certificate；Official Registry；Residence Card；Applicant Photo；Photograph；Awards；Achievements；Award Certificate；Awarding Organization；Certification of Finances for International Students；CFIS；Supporting Financial Documents；Proof of Financial Support；身份证件；照片；奖项证明；财力证明；其他证明材料
+
+【F021–F025字段定义与本轮取舍】
+F021 年龄：最低年龄；判定日期或事件；适用资格路径；例外。来源：S47，第5页。
+F022 国籍及签证：国籍集合；签证或居留身份；持有时点；身份组合；适用申请渠道；例外。来源：S47，第7,9,14,17,21页。
+F023 多项目及多轮申请规则：是否允许并申；是否允许跨轮重申；适用项目或轮次；材料重交与推荐信复用。来源：S47，第4页。
+F024 学费：金额；币种；计费周期；适用学年；适用项目或院校；金额是否公布。来源：S47，第19–21页。
+F025 其他证明材料：材料类型；适用项目或申请人；必需或可选；具体规格；替代材料；提交阶段；奖项认可领域；财力金额、币种及对应学年。来源：S47，第8–9,14,17,21页。
+通用属性：保留适用对象、项目、阶段、必需/可选、例外及原文页码；条件只对原文适用范围生效。
+合并口径：N01→F021；N02/N03→F022；N06→F023；N07仅学费→F024；N08/N09/N10/N14→F025。
+费用范围：仅保留学费；申请费、入学金、会费、手续费、付款操作、分期及退款细则不纳入本轮字段。财力证明金额归F025，不归学费。
+忽略主题：N04招生名额、N05申请平台及完成状态、N11入试便利、N12诚信及AI限制、N13不受理或撤销后果、N15奖学金、N16 COE及入境办理、N17合作大学注册、N18招生理念、N19通知及回应。
+其他证明材料包括身份证件、照片、奖项和财力等补充材料；已有成绩单、毕业证明和英语证明仍归原字段。奖项须区分可选与必需，财力证明须标注用途和学年。
+本轮只新增F021–F025；原有21个核心词及Q、F001–F020、SUB、G编号含义保持不变；其他细化、补词和同步建议未在本轮自动执行。
+
+四、各体系重点科目检索词
+这一部分覆盖高频科目及容易漏掉的命名差异；实际文件中出现的其他科目也应按原文保留。
+
+SUB01｜通用科目｜Mathematics；Maths；Math；Further Mathematics；Calculus；Statistics；Physics；Chemistry；Biology；Computer Science；Computing；Information Technology；Economics；Business；Business Studies；Accounting；English；English Language；English Literature；Chinese；History；Geography；Psychology；Politics；Sociology；Art；Design；Music；Environmental Science；Science；Humanities；Social Sciences
+SUB02｜A-Level/AS｜Mathematics；Further Mathematics；Physics；Chemistry；Biology；Computer Science；Economics；Business；Accounting；English Language；English Literature；History；Geography；Psychology；Sociology；Global Perspectives and Research；Thinking Skills；Subject Grade；Grade Combination
+SUB03｜IB｜HL；SL；Mathematics: Analysis and Approaches；Math AA；Mathematics: Applications and Interpretation；Math AI；English A；English B；Language A；Language B；ab initio；Physics；Chemistry；Biology；Computer Science；Economics；Business Management；History；Geography；Psychology；Global Politics；Visual Arts；TOK；Theory of Knowledge；EE；Extended Essay；CAS；Core Points；HL Points；Total Points；Diploma Awarded
+SUB04｜SAT｜Reading and Writing；RW；Evidence-Based Reading and Writing；EBRW；Math；Mathematics；Total Score；Section Score；Digital SAT
+SUB05｜ACT｜English；Mathematics；Math；Reading；Science；Writing；Composite；STEM；ELA；Enhanced ACT
+SUB06｜AP数学/科学｜Calculus AB；Calculus BC；Precalculus；Statistics；Physics 1；Physics 2；Physics C: Mechanics；Physics C: Electricity and Magnetism；Chemistry；Biology；Environmental Science；Computer Science A；Computer Science Principles
+SUB07｜AP人文/社科/语言/艺术｜English Language and Composition；English Literature and Composition；Microeconomics；Macroeconomics；Psychology；United States History；World History: Modern；European History；United States Government and Politics；Comparative Government and Politics；Human Geography；Art History；Music Theory；2-D Art and Design；3-D Art and Design；Drawing；World Languages and Cultures；AP Seminar；AP Research
+SUB08｜OSSD｜Grade 12；4U；4M；University Preparation；University/College Preparation；ENG4U；EAE4U；MHF4U；MCV4U；MDM4U；SBI4U；SCH4U；SPH4U；ICS4U；Advanced Functions；Calculus and Vectors；Mathematics of Data Management；Top Six；Best Six；Prerequisite Courses；Credits；OSSLT；OSSLC；Ontario Secondary School Literacy Test；Ontario Secondary School Literacy Course
+SUB09｜加拿大其他省份｜Grade 12 Academic Courses；University Preparatory；English 12；Pre-Calculus 12；Calculus 12；Biology 12；Chemistry 12；Physics 12；30-level；40S；Diploma Examination；Provincial Assessment；Literacy Assessment；Numeracy Assessment
+SUB10｜DES/DEC｜Secondaire V；Secondary V；Diplôme d'études secondaires；CEGEP；Pre-university DEC；Technical DEC；College Studies；Prerequisite Courses；Mathematics；Science；Language of Instruction；Final Grade；Credits；College Transcript
+SUB11｜HKDSE｜Chinese Language；English Language；Mathematics Compulsory Part；Mathematics Extended Part；Module 1；M1；Calculus and Statistics；Module 2；M2；Algebra and Calculus；Citizenship and Social Development；CSD；Liberal Studies〔历史〕；Physics；Chemistry；Biology；Economics；Business, Accounting and Financial Studies；BAFS；Information and Communication Technology；ICT；Category A；Category B；Category C；Applied Learning；ApL；Best Five；5**；5*；Attained；Unattained
+SUB12｜澳大利亚｜Year 12；Units 3 and 4；Stage 2；ATAR Subjects；English；EAL；English as an Additional Language；Mathematical Methods；Specialist Mathematics；General Mathematics；Mathematics Advanced；Mathematics Extension 1；Mathematics Extension 2；Physics；Chemistry；Biology；Study Score；Scaled Score；Subject Result；Selection Rank；ATAR
+SUB13｜新西兰｜NCEA Level 3；Approved Subjects；Achievement Standards；Unit Standards；Credits；Achieved；Merit；Excellence；Endorsement；University Entrance；UE；Literacy；Numeracy；Calculus；Statistics；Physics；Chemistry；Biology
+SUB14｜新加坡A-Level｜H1；H2；H3；General Paper；GP；Project Work；PW；Mother Tongue Language；MTL；Mathematics；Further Mathematics；Physics；Chemistry；Biology；Economics；Computing；Content Subjects；Rank Points；University Admission Score
+SUB15｜STPM/UEC｜Pengajian Am；General Studies；Mathematics (M)；Mathematics (T)；Physics；Chemistry；Biology；Economics；Accounting；Subject Grade；CGPA；Aggregate；Senior Middle
+SUB16｜法国/欧洲文凭｜Speciality Subjects；Spécialités；Mathematics；Mathématiques；Physics-Chemistry；Physique-Chimie；SVT；SES；Overall Average；Moyenne Générale；Coefficient；Written Examination；Oral Examination；European Baccalaureate；L1；L2；L3；Mathematics 3 Periods；Mathematics 5 Periods
+SUB17｜德国/中东欧｜Advanced Subjects；Basic Subjects；Leistungskurs；Grundkurs；Overall Grade；Average Grade；Points；State Examination；Matura Subjects；Higher Level；Extended Level
+SUB18｜GED｜Mathematical Reasoning；Reasoning Through Language Arts；RLA；Science；Social Studies；Subject Score；College Ready
+SUB19｜HiSET｜Language Arts Reading；Language Arts Writing；Mathematics；Science；Social Studies；Subtest Score；Essay Score
+SUB20｜CAPE｜Unit 1；Unit 2；One-unit；Two-unit；Communication Studies；Caribbean Studies；Subject Grade；CAPE Diploma
+SUB21｜EJU｜Japanese as a Foreign Language；日本語；Japan and the World；総合科目；Mathematics Course 1；Mathematics Course 2；数学コース1；数学コース2；Science；理科；Physics；Chemistry；Biology；Writing Score；記述
+
+五、毕业类型、学校资质与认证关键词（保留并扩充）
+G001｜毕业证明｜Certificate of Graduation；Graduation Certificate；High School Diploma；School Leaving Certificate；Certificate of Completion；毕业证；毕业证明；结业证明；卒業証明書；修了証明書
+G002｜预计毕业｜Certificate of Expected Graduation；Prospective Graduation；Expected Graduation；Graduation Date；预毕业；预计毕业；卒業見込証明書；修了見込証明書
+G003｜普通高中｜General High School；Senior High School；Senior Secondary School；普通高中；普高
+G004｜三校生｜三校生；中等职业学校；中职；中等专业学校；中专；职业高中；职高；职业学校；职校；技工学校；技校；Secondary Vocational School；Vocational High School；Technical School；Specialised Secondary School
+G005｜国际高中｜International School；International High School；International Division；Offshore School；Overseas High School；国际学校；国际高中；国际部；境外高中
+G006｜学制｜Years of Schooling；12-year Education；12-year School Curriculum；11-year Education；Completion of Secondary Education；Standard School Curriculum；学制；受教育年限
+G007｜学信网｜学信网；CHSI；中国中等教育学历验证报告；中国中等学校学生成绩验证报告；普通高中学业水平考试（会考）成绩报告；中国高等学校招生入学考试成绩报告
+G008｜学历验证｜Credential Verification；Qualification Verification；Educational Background Verification；Graduation Certificate Verification；Transcript Verification；Verification Report；学历验证；学历认证；成绩验证
+G009｜验证适用范围｜Eligible Credential Type；Verification Eligibility；Verification Scope；Issuing Authority；Report Number；Certificate Number；学历类型；验证适用范围；是否可验证；报告编号；证书编号
+G010｜Cognia｜Cognia；cogina〔误拼检索〕；Cognia Accreditation；Cognia-accredited School；AdvancED；NCA CASI；SACS CASI；NWAC
+G011｜其他认证相关名称｜WASC；ACS WASC；NEASC；CIS；ACSI；COBIS；Accredited International School；School Accreditation；Accrediting Organization；Recognition Status
+G012｜学校与颁证机构｜Diploma Issuing School；Awarding Institution；School of Record；Credit-granting Authority；Ministry-inspected School；Licensed School；Authorised School；授权学校；颁证学校；学分授予权
+G013｜认证时间｜Accreditation Status；Accreditation Period；Accreditation Validity；Accredited at Time of Graduation；认证有效期；毕业时认证状态
+G014｜个别资格审查｜Admission Eligibility；Application Eligibility；Entrance Qualification；Individual Eligibility Screening；Individual Assessment；Equivalent Qualification；出願資格；入学資格；個別入学資格審査
+G015｜材料形式｜Certified Copy；Notarised Copy；Notarized Copy；Certified Translation；Official Translation；Original Document；Electronic Verification；公证；翻译；认证副本；原件
+
+六、避免漏检与误合并的检索规则
+1. 正式名称、简称、当地语言名称、旧称和常见无重音拼写同时保留。
+2. A-Level/A Level/ALEVEL、programme/program、recognised/recognized、certified/certificated等写法兼容。
+3. DES与DSE/HKDSE分别记录；HSC、SSC、GED、ACT、IB等短词必须结合国家、机构与上下文。
+4. Diploma、Certificate、Baccalaureate、Baccalauréat、Bachillerato、Matura、Matriculation、School Leaving、Secondary Education、Upper Secondary、Pre-University等作为资格名称入口。
+5. 扫描“Qualifications / Eligibility / Academic Requirements / Entry Requirements / Required Subjects / Standardised Tests / Standardized Tests / Educational Background”等栏目名称。
+6. 不把某个国家或大学的资格认可规则外推到其他大学。
+7. 不把预科、职业文凭、较早学段资格、排名指标、课程品牌或认证机构自动当成普通高中毕业文凭。
+8. 不将“未注明”“不接受”“不要求”“可豁免”“必须提交”合并；后续提取应分别保存状态。
+9. 不假定分数相同即等价；保留计分量表、科目级别、考试版本、颁发年份和来源页码。
+10. 对不在词表中的资格，记录“原文资格名称＋国家/地区＋颁发机构＋层级”，放入Other Qualifications继续核对。
+
+七、来源索引
+S01｜IB课程及资格名称、国际资格目录
+https://www.ibo.org/programmes/diploma-programme/curriculum/
+https://www.ox.ac.uk/admissions/undergraduate/courses/admissions-requirements/international-qualifications
+S02｜Cambridge International：A-Level、AICE、IGCSE、Pre-U
+https://www.cambridgeinternational.org/programmes-and-qualifications/recognition-and-acceptance/guidance-for-universities/
+https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-advanced/cambridge-international-as-and-a-levels/subjects/
+S03｜Pearson International Advanced Levels
+https://qualifications.pearson.com/en/qualifications/edexcel-international-advanced-levels.html
+S04｜Pearson BTEC International Level 3
+https://qualifications.pearson.com/en/qualifications/btec-international-level-3.html
+S05｜Oxford本科国际资格名称目录（只用于名称核对）
+https://www.ox.ac.uk/admissions/undergraduate/courses/admissions-requirements/international-qualifications
+S06｜UCL国家/地区中学资格名称目录（只用于名称核对）
+https://www.ucl.ac.uk/study/clie/upc-foundation/entry-requirements/academic-requirements-countryregion
+S07｜College Board AP课程与考试
+https://apstudents.collegeboard.org/courses
+S08｜College Board AP Capstone
+https://apcentral.collegeboard.org/courses/ap-capstone/how-ap-capstone-works
+S09｜College Board SAT分数结构
+https://satsuite.collegeboard.org/k12-educators/about/understand-scores-benchmarks/score-structure
+S10｜ACT成绩说明
+https://www.act.org/content/act/en/products-and-services/the-act/scores/understanding-your-scores.html
+S11｜GED考试与成绩
+https://www.ged.com/about-test/scores.html
+https://www.ged.com/
+S12｜HiSET
+https://hiset.org/about-hiset/
+S13｜安大略省教育部门：OSSD
+https://www.ontario.ca/document/ontario-schools-kindergarten-grade-12-policy-and-program-requirements/diploma-and-certificate-requirements-related-procedures
+S14｜不列颠哥伦比亚省：Dogwood与学生证书
+https://www2.gov.bc.ca/gov/content/education-training/k-12/administration/legislation-policy/public-schools/student-credentials
+S14A｜不列颠哥伦比亚省：Adult Dogwood
+https://www2.gov.bc.ca/gov/content/education-training/adult-education/graduate-high-school/bc-adult-graduation-diploma-program
+S15｜Sunway CIMP项目及OSSD（名称核对）
+https://www.sunwaycollege.edu.my/sites/default/files/inline-images/pdfs/cimp-guide-2025.pdf
+S16｜加拿大省级高中资格与课程名称
+https://www.utsc.utoronto.ca/admissions/canadian-high-school-overview
+https://www.ucl.ac.uk/digital-presence-services/webapps-drupal-cms/www/international-country-information-undergraduate.php?country=CA&ug_year=2026
+S17｜魁北克政府：DES与DEP
+https://www.quebec.ca/education/cegeps-colleges-prives/etudier/admission
+S18｜魁北克政府：DEC与AEC
+https://www.quebec.ca/education/cegeps-colleges-prives/diplomes
+S19｜NUS资格名称：A-Level、美国高中、印度Class XII
+https://www.nus.edu.sg/oam/admissions/international-qualifications-for-foreigners/international-qualifications/international-a-level
+https://www.nus.edu.sg/oam/admissions/international-qualifications-for-singapore-citizens-sprs/international-qualifications/american-high-school-diploma
+https://www.nus.edu.sg/oam/admissions/international-qualifications-for-foreigners/international-qualifications/indian-standard-12-cbse-and-isc
+S20｜新加坡教育部及考试评估局
+https://www.seab.gov.sg/gce-a-level/about-gce-a-level/
+https://www.moe.gov.sg/secondary/courses/express/electives/
+S20A｜新加坡SEC
+https://www.seab.gov.sg/secondary-education-certificate-sec/
+S21｜ACARA：澳大利亚各州/领地高中证书名称
+https://www.acara.edu.au/docs/default-source/default-document-library/national-report-on-schooling-in-australia-glossary-2020.pdf?sfvrsn=6baf4c07_0
+S22｜SACE Board：SACE International及SAM旧称
+https://www.sace.sa.edu.au/documents/3138616/3138898/SACE%2BInternational%2Binformation%2Bsheet.pdf/e0e2fe7f-5966-4f69-a004-f27e3f89fbf9
+S23｜Sunway：AUSMAT与WACE
+https://sunwaycollege.edu.my/programmes/pre-university-foundation/australian-matriculation
+S24｜UAC：ATAR
+https://uac.edu.au/future-applicants/atar
+S25｜NZQA：NCEA及UE
+https://www2.nzqa.govt.nz/ncea/understanding-secondary-quals/university-entrance/
+https://www2.nzqa.govt.nz/ncea/understanding-secondary-quals/university-entrance/ue-subjects/
+S26｜香港考评局：HKDSE科目及成绩汇报
+https://www.hkeaa.edu.hk/en/hkdse/assessment/subject_information/
+https://www.hkeaa.edu.hk/en/hkdse/assessment/the_reporting_system/
+https://www.hkeaa.edu.hk/en/recognition/ce_al_recognition/
+https://www.hkeaa.edu.hk/en/about_hkeaa/milestones/develop_hk_pub_exam/hkcee
+S27｜马来西亚教育部及考试委员会
+https://www.moe.gov.my/index.php/permohonan-kelayakan-universiti-awam
+https://portal.mpm.edu.my/en/stpm/stpm-syllabus
+S28｜董总：UEC名称
+https://www.dongzong.my/resource/images/doc/uec/UEC-BI-2018.pdf
+S29｜欧洲学校：European Baccalaureate
+https://www.eursc.eu/en/European-Schools/European-Baccalaureate
+S30｜法国教育部：BFI与OIB
+https://www.education.gouv.fr/reussir-au-lycee/le-baccalaureat-francais-international-bfi-5960
+S31｜德国KMK：DIA
+https://www.kmk.org/service/auslandsschulen-und-dsd.html
+S32｜南非IEB：NSC
+https://www.ieb.co.za/assessment/high-schools/national-senior-certificate
+S33｜加勒比考试委员会：CAPE/CSEC
+https://www.cxc.org/examinations/cape/
+https://www.cxc.org/wes-statement/
+S34｜UCAS：英国资格、成绩及Tariff
+https://www.ucas.com/further-education/post-16-qualifications/qualifications-you-can-take
+https://www.ucas.com/applying/you-apply/what-and-where-study/entry-requirements
+https://www.ucas.com/applying/before-you-apply/what-and-where-to-study/entry-requirements/ucas-tariff-points
+S35｜学信网报告类型
+https://www.chsi.com.cn/xlrz/rhsq_index.jsp
+https://www.chsi.com.cn/xlrz/sample_cseqc.jsp
+S36｜日本文部科学省：大学入学资格名称
+https://www.mext.go.jp/a_menu/koutou/shikaku/07111314.htm
+S37｜日本学生支援机构：EJU
+https://www.jasso.go.jp/en/ryugaku/eju/index.html
+S38｜NCUK：国际预科
+https://www.ncuk.ac.uk/ncuk-programmes/international-foundation-year/
+S39｜Cognia：学校认证
+https://www.cognia.org/accreditation/
+S40｜三校生名称
+https://www.cxs.gov.cn/info/26306/827969.htm
+S41｜CPU项目名称与OSSD：课程提供学校
+https://www.canadaeschool.ca/cpu/
+https://stradfordcollege.edu.my/canadian-pre-university/
+S42｜WJEC：Advanced Skills Baccalaureate Wales
+https://www.wjec.co.uk/qualifications/level-3-advanced-skills-baccalaureate-wales/
+S43｜Nuffic：荷兰HAVO与VWO名称
+https://www.nuffic.nl/en/education-systems/the-netherlands/primary-and-secondary-education
+S44｜College Board：SAT Subject Tests历史名称
+https://blog.collegeboard.org/what-were-sat-subject-tests
+S45｜IB成绩与证书
+https://ibo.org/programmes/diploma-programme/assessment-and-exams/getting-results/
+https://ibo.org/programmes/diploma-programme/assessment-and-exams/requesting-transcripts
+S46｜USIM 2026/2027资格名称目录：澳洲预科项目（仅核对名称）
+https://flip.usim.edu.my/admission/undergraduate/2026-2027/9/
+
+来源说明：以上来源用来核对词汇与类型；本文件不复制这些机构对具体大学、专业的录取结论或分数门槛。
+
+S47｜立命馆大学2027 AO Admissions (English Basis) Application Handbook
+用户提供文件：aohb27.pdf；发布：April 2026；23页。
+第5页年龄；第7、9、14、17、21页国籍/居留身份；第4页多项目及多轮申请；第19–21页学费；第8–9、14、17、21页其他证明材料。
+范围决定：用户2026-10-21确认新增五类字段。不得将本校条件或金额外推至其他项目、学年或院校。

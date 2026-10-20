@@ -1,0 +1,13 @@
+services:
+  sgu:
+    build: .
+    ports:
+      - "127.0.0.1:3210:3210"
+    volumes:
+      - sgu-data:/app/.data
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3210
+    restart: unless-stopped
+volumes:
+  sgu-data:
