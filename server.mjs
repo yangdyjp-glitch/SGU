@@ -16,20 +16,20 @@ const userCount=()=>db.prepare('SELECT count(*) AS n FROM users').get().n;
 for(const doc of getDocuments())if(doc.status==='parsing'){doc.status='error';doc.error='服务曾在解析期间重启，请点击重试；原始文件已保留。';saveDocument(doc);}
 const attempts=new Map();
 function rateLimit(req){const key=req.socket.remoteAddress,now=Date.now();let bucket=attempts.get(key);if(!bucket||now-bucket.start>600000){bucket={start:now,count:0};attempts.set(key,bucket);}if(++bucket.count>30)fail('尝试次数较多，请10分钟后重试',429);}
-function safeUser(u){return {id:u.id,name:u.name,login:u.login};}
+function safeUser(u){return {id:u.id,login:u.login,role:u.role};}
 const server=http.createServer(async(req,res)=>{
  res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','same-origin');res.setHeader('X-Frame-Options','DENY');
  res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
  try{
-  const url=new URL(req.url,'http://localhost');const path=url.pathname;const token=(req.headers.cookie||'').split(';').map(s=>s.trim()).find(s=>s.startsWith('sgu_session='))?.slice(12);const user=sessionUser(token);const actor=user?user.name+' ('+user.login+')':'';
+  const url=new URL(req.url,'http://localhost');const path=url.pathname;const token=(req.headers.cookie||'').split(';').map(s=>s.trim()).find(s=>s.startsWith('sgu_session='))?.slice(12);const user=sessionUser(token);const actor=user?.login||'';
   if(path.startsWith('/api/')){
    const isWrite=!['GET','HEAD'].includes(req.method);
    if(isWrite){if(!String(req.headers['content-type']).startsWith('application/json')||req.headers['x-sgu-request']!=='1')fail('无效请求来源',403);const expected=process.env.APP_ORIGIN||`http://${req.headers.host}`;if(req.headers.origin&&req.headers.origin!==expected)fail('不允许跨站请求',403);if(user&&!path.startsWith('/api/auth/')&&req.headers['x-csrf-token']!==user.csrf)fail('会话验证失败，请刷新页面',403);}
    const body=isWrite?await readBody(req):null;
    if(path==='/api/auth/state'&&req.method==='GET')return send(res,200,{setup:userCount()===0,user:user?safeUser(user):null,csrf:user?.csrf});
    if(path==='/api/auth/register'&&req.method==='POST'){
-    rateLimit(req);if(typeof body.name!=='string'||!body.name.trim()||body.name.length>40||!/^[a-zA-Z0-9_.@-]{3,80}$/.test(body.login||'')||typeof body.password!=='string'||body.password.length<10||body.password.length>200)fail('请填写姓名、有效账号和至少10位密码');
-    const created=transaction(()=>{if(userCount()>0&&body.invite!==db.prepare("SELECT value FROM meta WHERE key='invite'").get().value)fail('团队邀请码不正确',403);const u={id:randomUUID(),name:body.name.trim(),login:body.login.toLowerCase()};if(db.prepare('SELECT id FROM users WHERE login=?').get(u.login))fail('账号已存在');db.prepare('INSERT INTO users VALUES(?,?,?,?,?)').run(u.id,u.name,u.login,passwordHash(body.password),now());event('account',u.name,u.name,{action:'加入团队'});return u;});
+    rateLimit(req);if(typeof body.login!=='string'||!/^[a-zA-Z0-9_.@-]{3,80}$/.test(body.login)||typeof body.password!=='string'||body.password.length<8||body.password.length>200)fail('请填写有效账号和至少8位密码');
+    const created=transaction(()=>{const first=userCount()===0;if(!first&&body.invite!==db.prepare("SELECT value FROM meta WHERE key='invite'").get().value)fail('团队邀请码不正确',403);const u={id:randomUUID(),login:body.login.toLowerCase(),role:first?'admin':'member'};if(db.prepare('SELECT id FROM users WHERE login=?').get(u.login))fail('账号已存在');db.prepare('INSERT INTO users(id,name,login,password,created_at,role) VALUES(?,?,?,?,?,?)').run(u.id,u.login,u.login,passwordHash(body.password),now(),u.role);event('account',u.login,u.login,{action:first?'创建管理员账号':'加入团队',role:u.role});return u;});
     const sess=newSession(created.id);return send(res,201,{user:created,csrf:sess.csrf},{'Set-Cookie':`sgu_session=${sess.token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=604800${process.env.COOKIE_SECURE==='true'?'; Secure':''}`});
    }
    if(path==='/api/auth/login'&&req.method==='POST'){
@@ -39,7 +39,7 @@ const server=http.createServer(async(req,res)=>{
    if(path==='/api/auth/logout'&&req.method==='POST'){db.prepare('DELETE FROM sessions WHERE token=?').run(hashToken(token));return send(res,200,{ok:true},{'Set-Cookie':'sgu_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0'});}
    if(path==='/api/bootstrap'&&req.method==='GET')return send(res,200,{user:safeUser(user),csrf:user.csrf,students:listStudents(),programs:getPrograms(),documents:getDocuments().map(({text,...d})=>d),revision:db.prepare("SELECT value FROM meta WHERE key='revision'").get()?.value,capabilities:{model:llmEnabled(),mineru:Boolean(process.env.MINERU_BIN)},team:db.prepare('SELECT id,name,login FROM users').all()});
    if(path==='/api/revision'&&req.method==='GET')return send(res,200,{revision:db.prepare("SELECT value FROM meta WHERE key='revision'").get()?.value});
-   if(path==='/api/team'&&req.method==='GET')return send(res,200,{users:db.prepare('SELECT id,name,login FROM users').all(),invite:db.prepare("SELECT value FROM meta WHERE key='invite'").get().value});
+   if(path==='/api/team'&&req.method==='GET')return send(res,200,{users:db.prepare('SELECT id,login,role FROM users').all(),invite:db.prepare("SELECT value FROM meta WHERE key='invite'").get().value});
    if(path==='/api/students'&&req.method==='POST'){
     const s=body.student;if(!s||typeof s.name!=='string'||!s.name.trim()||s.name.length>80)fail('请填写学生姓名');if(s.birthDate&&!validDate(s.birthDate)||s.graduationDate&&!validDate(s.graduationDate))fail('学生日期格式无效');
     if(s.intake&&!/^20\d{2}-(04|09)$/.test(s.intake))fail('入学期格式无效');if(s.exams&&!Array.isArray(s.exams)||s.exams?.length>30)fail('成绩列表无效');
