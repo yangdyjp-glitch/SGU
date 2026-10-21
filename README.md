@@ -13,12 +13,22 @@
 ```powershell
 git clone https://github.com/yangdyjp-glitch/SGU.git
 cd SGU
-npm start
+npm.cmd start
 ```
 
 访问 **http://127.0.0.1:3210**。首次打开使用账号和密码创建管理员，不再填写姓名；随后在“团队设置”取得邀请码，同事使用各自账号加入。密码至少8位。页面身份与新增操作记录统一显示账号，所有员工均可编辑项目规则，保存直接生效。实际账号保存在本机数据库，仓库不包含预设密码。
 
-Windows也可运行 `start.ps1`：检查本机服务是否已启动，否则在后台启动并打开网页。`stop.ps1`只停止此项目启动脚本记录且校验过的进程。
+上面的 Windows 命令使用 `npm.cmd`，避免 PowerShell 把 `npm` 解析为被执行策略拦截的 `npm.ps1`；其他系统使用 `npm start`。这种方式在前台运行，需要保持终端开启。
+
+Windows 后台启动，在项目目录执行：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\start.ps1
+```
+
+`start.ps1` 检查本机服务是否已启动，否则在后台启动并打开网页；确认页面可访问后可关闭终端。停止时使用 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\stop.ps1`，只停止此项目启动脚本记录且校验过的进程。
+
+两份 PowerShell 脚本必须保存为 **UTF-8 with BOM**，`.editorconfig` 已设置该要求。Windows PowerShell 5.1 会把没有 BOM 的中文脚本按本机旧编码读取，可能出现乱码和“字符串缺少终止符”。这类解析错误发生在 Node 启动之前，应先修复脚本编码。自启动设置和排查方法见 [交接文件第1节](HANDOFF.md#1-在新电脑恢复开发)。
 
 内置的林、陈、王同学均为虚构示例。可以直接新建实际学生档案，示例可在列表中筛除。
 

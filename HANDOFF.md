@@ -30,7 +30,7 @@
 
 原始交接保留了当时的“先不要制作网页”“技术栈未确定”“尚未创建代码”等记录。用户后来已明确要求开始开发、上传上述 Git 仓库，并连续提出账号和界面修改。这些旧的阶段描述已经失效；不能据此把项目退回需求讨论阶段或重新搭建另一套网站。
 
-当前用户的请求是生成交接文件。本轮只整理文档，未新增业务功能；下一步根据用户的新修改要求继续。
+交接文件创建后，用户继续排查 Windows 本地启动与登录自启动问题。`npm.cmd start` 已由用户确认可用；后台启动发现 Windows PowerShell 读取无 BOM 的中文脚本时出现乱码和字符串终止符解析错误。当前修复为 `start.ps1`、`stop.ps1` 保存 UTF-8 BOM，并通过 `.editorconfig` 保持编码；不改业务逻辑或数据库。用户电脑上的修复后启动与重新登录自启仍须实际验证。
 
 ## 0A. 用户最新确认的界面与账号要求
 
@@ -65,12 +65,12 @@
 git clone https://github.com/yangdyjp-glitch/SGU.git
 cd SGU
 node --version
-npm run check
-npm test
-npm start
+npm.cmd run check
+npm.cmd test
+npm.cmd start
 ```
 
-浏览器打开 http://127.0.0.1:3210/ 。`npm start` 在当前终端运行，停止时使用 Ctrl+C。
+浏览器打开 http://127.0.0.1:3210/ 。`npm.cmd start` 在当前终端运行，停止时使用 Ctrl+C。Windows 使用 `npm.cmd` 可避开 `npm.ps1` 的执行策略报错；其他系统仍使用 `npm`。
 
 如果新电脑已有本仓库，先确认并保留自己的未提交修改，再更新：
 
@@ -79,7 +79,40 @@ git status --short --branch
 git pull --ff-only origin main
 ```
 
-Windows 也可以使用 `start.ps1` 后台启动并打开网页，使用 `stop.ps1` 停止该脚本记录的 SGU 进程。脚本被系统执行策略限制时，可直接使用 `npm start`。`start.ps1` 按默认 3210 端口工作；修改端口后优先用终端启动并访问实际端口。
+Windows 后台启动，在项目目录运行：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\start.ps1
+```
+
+确认网站可访问后可关闭终端。停止时运行 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\stop.ps1`，只停止该脚本记录的 SGU 进程。执行策略参数只对该 PowerShell 进程生效。`start.ps1` 按默认 3210 端口工作；修改端口后优先用终端启动并访问实际端口。
+
+### Windows PowerShell 编码故障（2026-10-21）
+
+用户报告 `start.ps1:15` 中文变为乱码，并出现“字符串缺少终止符”，脚本在解析阶段失败，尚未执行 Node 启动。因此 Node 错误日志可能为空。原脚本为 UTF-8 无 BOM；当前两份 `.ps1` 已补上 UTF-8 BOM，脚本文本和启动逻辑保持原样。`.editorconfig` 对 `*.ps1` 指定 `charset = utf-8-bom`，后续编辑须保留。
+
+验证范围：已核对修复后的文件字节为 `EF BB BF` 开头，去掉 BOM 后与原脚本完全一致。当前修复环境为 Linux，不能据此声称已经验证 Windows PowerShell 5.1 启动；需在用户 Windows 上运行脚本、关闭启动终端后访问网页，并验证下次登录自动启动。
+
+### 登录 Windows 后自动后台启动
+
+用户此前已经在当前 Windows 账号的启动文件夹创建 `SGU.lnk`。快捷方式调用 `powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "<项目目录>\start.ps1"`，工作目录指向项目目录。上述编码错误会使该隐藏进程退出；修复脚本后可复用该快捷方式。快捷方式创建成功不等于服务已经启动成功。
+
+新电脑或新的 Windows 账号需重新配置。先确认手动后台启动成功，再在 PowerShell 中一次性执行以下命令；`$sguRoot` 改为实际项目路径：
+
+```powershell
+$sguRoot = 'C:\Users\Administrator\Documents\ChatGPT\SGUREAD\sgu'
+$sguScript = Join-Path $sguRoot 'start.ps1'
+if (-not (Test-Path -LiteralPath $sguScript)) { throw 'SGU start.ps1 not found.' }
+$sguLink = Join-Path ([Environment]::GetFolderPath('Startup')) 'SGU.lnk'
+$sguShortcut = (New-Object -ComObject WScript.Shell).CreateShortcut($sguLink)
+$sguShortcut.TargetPath = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
+$sguShortcut.Arguments = '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "' + $sguScript + '"'
+$sguShortcut.WorkingDirectory = $sguRoot
+$sguShortcut.Save()
+Start-Process -FilePath $sguLink
+```
+
+这只配置当前用户登录后的启动，不是 Windows 系统服务；不提供异常退出后自动重启，也不保证关机或休眠期间可访问。取消时用 Win+R 打开 `shell:startup`，删除 `SGU.lnk`。发生错误时，去掉 `-WindowStyle Hidden` 在可见终端运行同一脚本，记录实际错误并查看 `.data/server-error.log`，不要仅凭快捷方式执行无报错判断服务健康。
 
 `.env` 是可选的，缺少时可以直接运行。需要个性化配置时，以 `.env.example` 为模板，按新电脑实际路径和服务地址填写。
 
@@ -209,7 +242,7 @@ MINERU_BIN_DIR=D:/AI-Yang.cn/tools/mineru/bin
 
 已知实现边界：未部署公网；Docker构建与外部HTTPS反向代理未验收；外部语言模型未联调。自然语言解析有明确支持范围，不声称能处理所有自由问法。新增项目或来源条款时，需要同步检查判定、详情归并、材料提示和证据是否覆盖，尤其 `project-detail.js` 中的条目编号与项目专属处理。
 
-本交接属于文档更新，未修改功能代码，未重复运行上述整套功能测试。
+创建本交接时未重复运行上述整套功能测试。后续 Windows 启动编码修复仅改变两份 PowerShell 脚本的 BOM 和相关文档／编辑器配置，进行了文件字节与脚本文本一致性检查；未重跑业务测试，Windows 实机验证待用户确认。
 
 ## 8. 接续修改的工作方法
 

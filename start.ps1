@@ -1,4 +1,4 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
 $sguRoot = $PSScriptRoot
 $sguUrl = 'http://127.0.0.1:3210'
 try { $sguStatus = Invoke-RestMethod -Uri ($sguUrl + '/api/auth/state') -TimeoutSec 2; if ($null -ne $sguStatus.setup) { Start-Process $sguUrl; exit 0 } } catch {}
