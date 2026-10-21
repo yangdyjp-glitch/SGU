@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {seedPrograms,exampleStudents} from '../lib/seed.mjs';
+import {seedPrograms} from '../lib/seed.mjs';
+import {exampleStudents} from './fixtures/students.mjs';
 import {matchProgram,matchAll,applicationWindow,validateProgram,checkCombination,allState,anyState} from '../lib/engine.mjs';
 import {parseQuery,queryPrograms,parseStudentText} from '../lib/query.mjs';
 const programs=seedPrograms(),get=id=>structuredClone(programs.find(p=>p.id===id));

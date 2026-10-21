@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
+import { exampleStudents } from './fixtures/students.mjs';
 import { randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 const base='http://127.0.0.1:3222';
@@ -16,6 +17,7 @@ test('authenticated team workflow, version history, conflicts and ingestion',asy
  await t.test('account-only login accepts eight-character password and rejects wrong credentials',async()=>{assert.equal((await req('/auth/login',{login:'reviewer',password:'Wrong123'})).status,401);const r=await req('/auth/login',{login:'REVIEWER',password:'Review26'});assert.equal(r.status,200);assert.equal(r.body.user.role,'admin');assert.equal(r.body.user.name,undefined);assert.equal((await req('/auth/register',{login:'shortpass',password:'short12'})).status,400);});
  await t.test('joining requires correct invitation and CSRF/origin enforced',async()=>{assert.equal((await req('/auth/register',{login:'reviewer2',password:'Temporary-QA-Only-2026',invite:'wrong'})).status,403);assert.equal((await req('/match',{studentId:'sample-lin'},{'X-CSRF-Token':'wrong'})).status,403);assert.equal((await req('/match',{studentId:'sample-lin'},{Origin:'https://other.example'})).status,403);});
  await t.test('invited accounts stay members and team identity uses only login',async()=>{const team=(await req('/team')).body;const r=await req('/auth/register',{login:'coworker',password:'Member26',invite:team.invite,role:'admin'});assert.equal(r.status,201);assert.equal(r.body.user.role,'member');const users=(await req('/team')).body.users;assert.equal(users.find(u=>u.login==='reviewer').role,'admin');assert.ok(users.every(u=>u.name===undefined));assert.ok((await req('/events')).body.some(e=>e.kind==='account'&&e.actor==='reviewer'&&e.subject==='reviewer'));});
+ await t.test('new workspace starts empty; test data is added explicitly',async()=>{assert.equal((await req('/bootstrap')).body.students.length,0);for(const student of exampleStudents()){const r=await req('/students',{student});assert.equal(r.status,200);}});
  let boot=(await req('/bootstrap')).body;
  let originalMatch;
  await t.test('matching stores a student and rule snapshot',async()=>{originalMatch=(await req('/match',{studentId:'sample-lin'})).body;assert.ok(originalMatch.id);assert.equal(originalMatch.results.length,7);assert.ok(originalMatch.results.some(r=>r.state==='conditional'));});

@@ -22,7 +22,7 @@ test('all academic alternatives retain accreditation, qualification lists, scope
     for (const path of view.paths) assert.equal(path.description.includes('18岁'), ['G', 'H', 'I'].includes(path.id));
     if (p.id === 'JDP') {
       assert.ok(!view.paths.some(x => ['F', 'H'].includes(x.id)));
-      assert.match(view.academic.find(x => x.id === 'R013').detail, /F路径.*H路径.*専修学校の高等課程.*不泛指全部职业教育/);
+      assert.match(view.academic.find(x => x.id === 'R013').detail, /短学制加MEXT指定预备教育.*日本高卒认定考试.*専修学校の高等課程.*不泛指全部职业教育/);
     } else {
       assert.match(view.paths.find(x => x.id === 'F').description, /少于12年.*日本大学预备/);
       assert.match(view.paths.find(x => x.id === 'H').description, /高等学校卒業程度認定試験/);

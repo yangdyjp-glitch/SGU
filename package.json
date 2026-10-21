@@ -4,11 +4,14 @@
   "private": true,
   "type": "module",
   "description": "SGU 日本英语本科选校工作台",
-  "engines": { "node": ">=24.15.0" },
+  "engines": {
+    "node": ">=24.15.0"
+  },
   "scripts": {
     "start": "node --env-file-if-exists=.env server.mjs",
     "dev": "node --watch --env-file-if-exists=.env server.mjs",
     "test": "node --test tests/*.test.mjs",
-    "check": "node scripts/check.mjs"
+    "check": "node scripts/check.mjs",
+    "students:clear": "node --env-file-if-exists=.env scripts/clear-students.mjs --confirm-clear-all"
   }
 }
