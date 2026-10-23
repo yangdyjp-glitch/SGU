@@ -2,7 +2,7 @@ import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { resolve, extname, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { db,now,transaction,event,getPrograms,getProgram,listStudents,getStudent,saveStudent,saveProgram,passwordHash,passwordVerify,newSession,sessionUser,hashToken,getDocuments,saveDocument } from './lib/store.mjs';
+import { db,now,transaction,event,getPrograms,getProgram,listStudents,getStudent,saveStudent,saveProgram,passwordHash,passwordVerify,newSession,sessionUser,hashToken,getDocuments,getDocument,getDocumentSummaries,saveDocument } from './lib/store.mjs';
 import { matchAll,checkCombination,validateProgram,validDate } from './lib/engine.mjs';
 import { validateStudentEducation } from './lib/education.mjs';
 import { parseQuery,queryPrograms,parseStudentText } from './lib/query.mjs';
@@ -53,7 +53,7 @@ const server=http.createServer(async(req,res)=>{
    }
    if(!user)fail('请先登录',401);
    if(path==='/api/auth/logout'&&req.method==='POST'){await db.prepare('DELETE FROM sessions WHERE token=?').run(hashToken(token));return send(res,200,{ok:true},{'Set-Cookie':'sgu_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0'});}
-   if(path==='/api/bootstrap'&&req.method==='GET')return send(res,200,{user:safeUser(user),csrf:user.csrf,students:await listStudents(),programs:await getPrograms(),documents:(await getDocuments()).map(documentSummary),revision:(await db.prepare("SELECT value FROM meta WHERE key='revision'").get())?.value,capabilities:{model:llmEnabled(),mineru:Boolean(process.env.MINERU_BIN),pdf:cloudPDFEnabled()?'cloud':process.env.MINERU_BIN?'mineru':null},team:(await db.prepare('SELECT id,name,login FROM users').all())});
+   if(path==='/api/bootstrap'&&req.method==='GET')return send(res,200,{user:safeUser(user),csrf:user.csrf,students:await listStudents(),programs:await getPrograms(),documents:await getDocumentSummaries(),revision:(await db.prepare("SELECT value FROM meta WHERE key='revision'").get())?.value,capabilities:{model:llmEnabled(),mineru:Boolean(process.env.MINERU_BIN),pdf:cloudPDFEnabled()?'cloud':process.env.MINERU_BIN?'mineru':null},team:(await db.prepare('SELECT id,name,login FROM users').all())});
    if(path==='/api/revision'&&req.method==='GET')return send(res,200,{revision:(await db.prepare("SELECT value FROM meta WHERE key='revision'").get())?.value});
    if(path==='/api/openai'&&req.method==='GET')return send(res,200,await openAIStatus());
    if((path==='/api/openai'||path==='/api/openai/check')&&req.method==='POST'){
@@ -96,7 +96,7 @@ const server=http.createServer(async(req,res)=>{
     const row=(await db.prepare('SELECT * FROM versions WHERE program_id=? AND version=?').get(body.programId,body.version));if(!row)fail('历史版本不存在',404);const p=JSON.parse(row.data);const errors=validateProgram(p);if(errors.length)fail(errors.join('；'));return send(res,200,await saveProgram(p,actor,`回档到v${body.version}：${String(body.note||'恢复已核对版本')}`,body.expectedVersion,body.version));
    }
    if(path==='/api/events'&&req.method==='GET')return send(res,200,(await db.prepare('SELECT * FROM events ORDER BY created_at DESC LIMIT 200').all()).map(r=>({...r,detail:JSON.parse(r.detail)})));
-   if(path==='/api/documents'&&req.method==='GET')return send(res,200,(await getDocuments()).map(documentSummary));
+   if(path==='/api/documents'&&req.method==='GET')return send(res,200,await getDocumentSummaries());
    if(path==='/api/documents'&&req.method==='POST'){
     if(!/\.(pdf|md|txt)$/i.test(body.filename||''))fail('支持PDF、Markdown和TXT');if(typeof body.base64!=='string')fail('未收到文件');const file=Buffer.from(body.base64,'base64');if(file.length>25*1024*1024)fail('文件最大25MB',413);if(extname(body.filename).toLowerCase()==='.pdf'&&!file.subarray(0,1024).includes(Buffer.from('%PDF-')))fail('文件不是有效PDF');
     const id=randomUUID(),storageName=id+extname(body.filename).toLowerCase();const doc={id,filename:body.filename.slice(0,200),name:body.filename.slice(0,200),storageName,uploadedBy:actor,uploadedAt:now(),status:'uploaded',size:file.length};await transaction(async()=>{await saveFile(storageName,file);await saveDocument(doc);await event('document',doc.filename,actor,{action:'上传'});});return send(res,201,documentSummary(await documentWorkflow.enqueue(id,actor)));
@@ -105,19 +105,19 @@ const server=http.createServer(async(req,res)=>{
    if(path.startsWith('/api/documents/')&&path.endsWith('/confirm')&&req.method==='POST'){const result=await confirmDocument(path.split('/')[3],body,actor);return send(res,200,{...result,document:documentSummary(result.document)});}
    if(path.startsWith('/api/documents/')&&path.endsWith('/draft')&&req.method==='POST'){
     const draft=await transaction(async()=>{
-    const doc=(await getDocuments()).find(d=>d.id===path.split('/')[3]);if(!doc||doc.builtin)fail('请选择上传文件');
+    const doc=await getDocument(path.split('/')[3]);if(!doc||doc.builtin)fail('请选择上传文件');
     const draft=prepareDocumentDraft(doc,body,await getPrograms(),actor);
     doc.projectDraft=draft;doc.reviewScope={school:draft.target.school,year:draft.target.year};
     await saveDocument(doc);await event('document',doc.filename,actor,{action:'保存项目草稿',school:draft.target.school,year:draft.target.year});return draft;});
     return send(res,200,draft);
    }
-   if(path.startsWith('/api/documents/')&&req.method==='GET'){const doc=(await getDocuments()).find(d=>d.id===path.split('/').pop());if(!doc)fail('资料不存在',404);return send(res,200,documentForReview(doc,await getPrograms()));}
+   if(path.startsWith('/api/documents/')&&req.method==='GET'){const doc=await getDocument(path.split('/').pop());if(!doc)fail('资料不存在',404);return send(res,200,documentForReview(doc,await getPrograms()));}
    if(path==='/api/export'&&req.method==='GET')return send(res,200,{exportedAt:now(),programs:await getPrograms(),students:await listStudents(),versions:(await db.prepare('SELECT * FROM versions').all()),matches:(await db.prepare('SELECT * FROM matches').all()),events:(await db.prepare('SELECT * FROM events').all())},{'Content-Disposition':'attachment; filename="sgu-backup.json"'});
    fail('接口不存在',404);
   }
   if(!['GET','HEAD'].includes(req.method))fail('请求方法不支持',405);
   if(path.startsWith('/sources/')&&!user)fail('请先登录',401);
-  if(path.startsWith('/uploads/')){if(!user)fail('请先登录',401);const doc=(await getDocuments()).find(d=>d.id===path.split('/')[2]);if(!doc||doc.builtin)fail('文件不存在',404);const content=await loadFile(doc.storageName);res.writeHead(200,{'Content-Type':mime[extname(doc.filename).toLowerCase()]||'application/octet-stream','Cache-Control':'no-store'});return res.end(content);}
+  if(path.startsWith('/uploads/')){if(!user)fail('请先登录',401);const doc=await getDocument(path.split('/')[2]);if(!doc||doc.builtin)fail('文件不存在',404);const content=await loadFile(doc.storageName);res.writeHead(200,{'Content-Type':mime[extname(doc.filename).toLowerCase()]||'application/octet-stream','Cache-Control':'no-store'});return res.end(content);}
   const file=resolve(root,'.'+decodeURIComponent(path==='/'?'/index.html':path));if(!file.startsWith(root+sep))fail('路径无效',403);const content=await readFile(file);res.writeHead(200,{'Content-Type':mime[extname(file)]||'application/octet-stream','Cache-Control':'no-cache'});res.end(req.method==='HEAD'?undefined:content);
  }catch(e){send(res,e.status||(e.code==='ENOENT'?404:500),{error:e.status?e.message:e.code==='ENOENT'?'文件不存在':'服务处理失败，请检查服务器日志',current:e.current});if(!e.status&&e.code!=='ENOENT')console.error(e);}
 });

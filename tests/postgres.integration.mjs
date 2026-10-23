@@ -5,6 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { openDatabase } from '../lib/database.mjs';
 import { exerciseDatabase,fixture } from './database.test.mjs';
 import { verifySnapshot } from '../lib/database-migration.mjs';
+import { exerciseDocumentReads } from './document-storage.test.mjs';
 
 test('PostgreSQL: persistence, concurrent writes, rollback, files, settings and private schema',{skip:!process.env.SGU_TEST_DATABASE_URL},async()=>{
  const schema='sgu_test_'+randomUUID().replaceAll('-','');
@@ -19,6 +20,7 @@ test('PostgreSQL: persistence, concurrent writes, rollback, files, settings and 
   const owner=second.withLease('document:test',async()=>{entered();await hold;});await started;
   const other=await openDatabase({url:process.env.SGU_TEST_DATABASE_URL,schema});
   try{assert.equal((await other.withLease('document:test',()=>assert.fail('duplicate worker'))).acquired,false);release();await owner;assert.equal((await other.withLease('document:test',()=>true)).acquired,true);}finally{release();await other.close();}
+  await exerciseDocumentReads(second);
  }finally{
   const cleanup=second||first||await openDatabase({url:process.env.SGU_TEST_DATABASE_URL,schema});
   // This exact random schema belongs only to this test invocation.

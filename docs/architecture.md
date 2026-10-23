@@ -36,6 +36,8 @@ flowchart TD
 
 `document-workflow.mjs` 管理持久化单任务队列：`queued → parsing → extracting → review → published`。没有模型配置转 `needs_configuration`；失败保留全文和已有草稿，短暂传输失败自动重试一次。重启恢复未完成任务。`document-ai.mjs` 只向官方OpenAI地址发送原文和核对意见，流式读取仅在 `response.completed` 后解析并通过严格JSON Schema校验，拒绝截断、拒答和不完整结构。
 
+状态列表由数据库直接投影摘要，不传输全文和规则草稿；按ID读取详情。恢复轮询只加载正在处理、等待配置或确需升级的文档，不遍历已整理完成的全部原文。批量上传时仍逐份提取与整理，以上优化不改变任务状态、页码、资格条款或整体确认步骤。
+
 `document-organizer.mjs` 强制绑定本文件来源，核对引用、页码、数值与必需身份字段。同学校、年度、项目和招生通道的唯一记录才会成为更新对象，其他新建。`autoReview` 保存完整规则、疑点、变更及预期项目版本；预览不进入 `programs`。`POST /api/documents/:id/confirm` 仅接受服务器草稿版本和整体确认，不接受客户端替换规则；所有项目、历史版本、文件发布状态及审计记录原子提交，重复确认幂等。
 
 旧 `projectDraft` 保留已有人工编辑。未填写规则的空白壳迁入 `previousManualDraft` 后自动整理；已有实质规则的人工草稿保持可用。关键词建议只作为历史兼容功能，不再要求新上传的用户逐条编辑。
