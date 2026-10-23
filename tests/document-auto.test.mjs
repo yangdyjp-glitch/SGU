@@ -110,6 +110,26 @@ test('scan configuration pause does not start empty semantic extraction, and OCR
  assert.equal((html.match(/data-act="confirm-document"/g)||[]).length,1);
 });
 
+test('workflow durably resumes scoped extraction and exposes a review only after every project is complete',async()=>{
+ const d=doc(),saved=new Map([[d.id,d]]),fixture=admissionsFixture();let bulk=0,index=0,first=0,second=0;
+ const complete=value=>Response.json({status:'completed',output:[{content:[{type:'output_text',text:JSON.stringify(value)}]}]});
+ const fetchImpl=async(url,options)=>{
+  const body=JSON.parse(options.body),input=JSON.parse(body.input[0].content[0].text);
+  if(body.text.format.name==='admissions_project_index'){index++;return complete({kind:fixture.kind,summary:fixture.summary,doubts:[],targets:fixture.programs.map(p=>({school:p.school,year:p.year,name:p.name,englishName:p.englishName,channel:p.channel,scope:p.name,source:p.paths[0].source}))});}
+  if(!input.selectedProject){bulk++;return Response.json({status:'incomplete',incomplete_details:{reason:'max_output_tokens'}});}
+  const target=input.selectedProject.name===fixture.programs[0].name?0:1;
+  if(target===0)first++;else if(++second===1)throw new Error('connection interrupted');
+  return complete({...fixture,programs:[fixture.programs[target]]});
+ };
+ const workflow=createDocumentWorkflow({documents:()=>[...saved.values()].map(d=>structuredClone(d)),programs:()=>[],config:()=>({apiKey:'test',model:'test'}),retryDelay:1,
+  saveStatus:(value,status)=>{value.status=status;saved.set(value.id,structuredClone(value));},saveProgress:value=>saved.set(value.id,structuredClone(value)),
+  extract:(doc,config,options)=>extractDocumentRules(doc,config,{...options,fetchImpl})});
+ await workflow.enqueue(d.id,'test');await waitFor(()=>!workflow.isBusy());
+ const result=saved.get(d.id);assert.equal(result.status,'review');assert.equal(result.autoReview.entries.length,2);
+ assert.equal(bulk,1);assert.equal(index,1);assert.equal(first,1);assert.equal(second,2);
+ assert.equal(result.analysis.organization,undefined);assert.equal(result.analysis.organizationMode,'by-program');
+});
+
 test('a broken model connection retries once automatically without re-parsing the file',async()=>{
  const d=doc();let calls=0,parses=0;
  const workflow=createDocumentWorkflow({documents:()=>[d],programs:()=>[],config:()=>({apiKey:'fake'}),saveStatus:(v,s)=>v.status=s,retryDelay:1,parse:async()=>{parses++;},extract:async()=>{calls++;if(calls===1)throw Object.assign(new Error('connection lost'),{retryable:true});return {extracted:admissionsFixture()};}});
