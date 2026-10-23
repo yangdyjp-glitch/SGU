@@ -16,6 +16,7 @@ import { confirmDocument } from './lib/document-publish.mjs';
 import { configureNetwork } from './lib/network.mjs';
 import { createRequestOrigin } from './lib/request-origin.mjs';
 import { loadFile, saveFile } from './lib/file-store.mjs';
+import { cloudPDFEnabled } from './lib/cloud-pdf.mjs';
 const expectedOrigin=createRequestOrigin();
 const root=resolve('public');const port=Number(process.env.PORT||3210),host=process.env.HOST||'127.0.0.1';
 const mime={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.pdf':'application/pdf','.txt':'text/plain; charset=utf-8','.md':'text/plain; charset=utf-8'};
@@ -23,11 +24,11 @@ const fail=(message,status=400,extra={})=>{throw Object.assign(new Error(message
 function send(res,status,obj,extra={}){res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store',...extra});res.end(JSON.stringify(obj));}
 async function readBody(req){let size=0;const chunks=[];for await(const chunk of req){size+=chunk.length;if(size>35*1024*1024)fail('文件或请求过大，最大25MB文件',413);chunks.push(chunk);}try{return JSON.parse(Buffer.concat(chunks).toString()||'{}');}catch{fail('请求不是有效JSON');}}
 const userCount=async()=>Number((await db.prepare('SELECT count(*) AS n FROM users').get()).n);
-configureNetwork();await documentWorkflow.resumePending({includeLegacy:true});
-// A local MinerU worker can pick up PDFs uploaded to Railway through the shared
-// queue. A cloud instance without MinerU never claims a PDF it cannot parse.
+const workerEnabled=process.env.DOCUMENT_WORKER!=='disabled';
+configureNetwork();if(workerEnabled)await documentWorkflow.resumePending({includeLegacy:true});
+// Railway processes its durable queue itself, including PDF text and scans.
 let polling=false;
-const queuePoll=db.kind==='postgres'?setInterval(async()=>{if(polling)return;polling=true;try{await documentWorkflow.resumePending();}catch(e){console.error('Document recovery failed:',e.code||e.name);}finally{polling=false;}},15000):null;
+const queuePoll=db.kind==='postgres'&&workerEnabled?setInterval(async()=>{if(polling)return;polling=true;try{await documentWorkflow.resumePending();}catch(e){console.error('Document recovery failed:',e.code||e.name);}finally{polling=false;}},15000):null;
 queuePoll?.unref();
 const attempts=new Map();
 function rateLimit(req){const key=req.socket.remoteAddress,now=Date.now();let bucket=attempts.get(key);if(!bucket||now-bucket.start>600000){bucket={start:now,count:0};attempts.set(key,bucket);}if(++bucket.count>30)fail('尝试次数较多，请10分钟后重试',429);}
@@ -52,7 +53,7 @@ const server=http.createServer(async(req,res)=>{
    }
    if(!user)fail('请先登录',401);
    if(path==='/api/auth/logout'&&req.method==='POST'){await db.prepare('DELETE FROM sessions WHERE token=?').run(hashToken(token));return send(res,200,{ok:true},{'Set-Cookie':'sgu_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0'});}
-   if(path==='/api/bootstrap'&&req.method==='GET')return send(res,200,{user:safeUser(user),csrf:user.csrf,students:await listStudents(),programs:await getPrograms(),documents:(await getDocuments()).map(documentSummary),revision:(await db.prepare("SELECT value FROM meta WHERE key='revision'").get())?.value,capabilities:{model:llmEnabled(),mineru:Boolean(process.env.MINERU_BIN)},team:(await db.prepare('SELECT id,name,login FROM users').all())});
+   if(path==='/api/bootstrap'&&req.method==='GET')return send(res,200,{user:safeUser(user),csrf:user.csrf,students:await listStudents(),programs:await getPrograms(),documents:(await getDocuments()).map(documentSummary),revision:(await db.prepare("SELECT value FROM meta WHERE key='revision'").get())?.value,capabilities:{model:llmEnabled(),mineru:Boolean(process.env.MINERU_BIN),pdf:cloudPDFEnabled()?'cloud':process.env.MINERU_BIN?'mineru':null},team:(await db.prepare('SELECT id,name,login FROM users').all())});
    if(path==='/api/revision'&&req.method==='GET')return send(res,200,{revision:(await db.prepare("SELECT value FROM meta WHERE key='revision'").get())?.value});
    if(path==='/api/openai'&&req.method==='GET')return send(res,200,await openAIStatus());
    if((path==='/api/openai'||path==='/api/openai/check')&&req.method==='POST'){

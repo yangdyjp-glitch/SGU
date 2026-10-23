@@ -32,7 +32,7 @@ flowchart TD
 
 数据库表为users、sessions、students、programs、versions、matches、events、documents与meta；共享模式另用files保存原文件和提取文本、settings保存后端模型配置。配置DATABASE_URL时，异步存储适配器直连PostgreSQL（Supabase私有sgu schema）；未配置时兼容原SQLite，不另建同步副本。当前版本更新、不可变版本插入及审计事件在同一事务内提交。写入必须带前一次读取的版本号；不匹配返回409及服务器当前版本，前端展示差异。PostgreSQL通过事务级advisory lock串行化跨实例写入，SQLite通过异步队列持有BEGIN IMMEDIATE直至提交。
 
-上传文件与文档记录在共享数据库中一起持久化，不依赖Railway临时文件系统。工作进程定期检查持久化队列，以会话级advisory lock独占某份文档；无MinerU的实例不认领需要本机解析的PDF。恢复调度不能把另一实例正在进行的状态、进度或核对意见覆盖成queued。已有全文可以在任一实例继续语义整理。
+上传文件与文档记录在共享数据库中一起持久化，不依赖Railway临时文件系统。Railway定期检查持久化队列，以会话级advisory lock独占某份文档，镜像内Poppler负责文字提取，扫描或含较大图片的页面使用OpenAI逐页识别。页数与文字分页必须一致；完整返回后才保存全文。识别疑点保留物理页码，合入原有整体核对区。缺少密钥进入needs_configuration，不能将空文字继续交给语义整理。恢复调度不能把另一实例正在进行的状态、进度或核对意见覆盖成queued。已有全文继续复用。部署和调试以线上为准，不需要本机工作进程。
 
 `document-workflow.mjs` 管理持久化单任务队列：`queued → parsing → extracting → review → published`。没有模型配置转 `needs_configuration`；失败保留全文和已有草稿，短暂传输失败自动重试一次。重启恢复未完成任务。`document-ai.mjs` 只向官方OpenAI地址发送原文和核对意见，流式读取仅在 `response.completed` 后解析并通过严格JSON Schema校验，拒绝截断、拒答和不完整结构。
 

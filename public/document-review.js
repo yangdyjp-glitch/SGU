@@ -34,7 +34,7 @@ export const documentUrl = id => id === 'aohb27' ? '/sources/aohb27.pdf' : '/upl
 
 export function renderDocumentStatus(d, ui) {
   const { esc, button } = ui;
-  const progress={queued:d.autoRetryCount?'连接中断后已自动安排重试，原文和已保存内容均保留。':'已加入处理队列，轮到后会自动开始。',parsing:'正在提取原文，完成后会自动识别项目并整理规则。',extracting:d.organizingProgress?.phase==='writing'?'正在逐步接收整理结果，完整检查后将显示疑点。':'正在识别学校、年份、项目及完整申请要求，并检查疑点。'}[d.status];
+  const progress={queued:d.autoRetryCount?'连接中断后已自动安排重试，原文和已保存内容均保留。':'已加入处理队列，轮到后会自动开始。',parsing:d.organizingProgress?.phase==='pdf'?`正在识别第 ${d.organizingProgress.page} / ${d.organizingProgress.pages} 页，完成后自动整理规则。`:'正在提取原文，完成后会自动识别项目并整理规则。',extracting:d.organizingProgress?.phase==='writing'?'正在逐步接收整理结果，完整检查后将显示疑点。':'正在识别学校、年份、项目及完整申请要求，并检查疑点。'}[d.status];
   const retry=['error','uploaded'].includes(d.status)||d.status==='review'&&!d.autoReview&&!d.hasReview&&!d.projectDraft;
   return `<div class="document-state"><div class="between section"><div>${renderDocumentBadge(d,ui)} <a class="link" href="${documentUrl(d.id)}" target="_blank" rel="noopener">查看原文件</a></div><div class="flex">${button('刷新状态','document',`data-id="${esc(d.id)}"`,'sm')}${retry?button(d.status==='error'?'重试自动整理':'自动整理','parse-document',`data-id="${esc(d.id)}"`,'primary sm'):''}</div></div>
     ${d.status === 'error' && d.error ? `<div class="error-box">${esc(d.error)}</div>` : ''}${progress?`<div class="note">${progress} 结果会自动更新，可以关闭窗口继续工作。</div>`:''}</div>`;

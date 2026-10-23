@@ -98,6 +98,18 @@ test('queue resumes interrupted correction jobs and processes documents sequenti
  await workflow.resumePending();await waitFor(()=>!workflow.isBusy());assert.equal(peak,1);assert.equal(first.status,'review');assert.equal(first.autoReview.version,2);assert.equal(second.status,'review');
 });
 
+test('scan configuration pause does not start empty semantic extraction, and OCR doubts use the existing overall review',async()=>{
+ const d={...doc(),status:'uploaded',text:''};let extractionCalls=0;
+ const workflow=createDocumentWorkflow({documents:()=>[d],programs:()=>[],config:()=>({apiKey:''}),saveStatus:(value,status)=>value.status=status,
+  parse:async value=>{value.status='needs_configuration';},extract:async()=>{extractionCalls++;}});
+ await workflow.enqueue(d.id,'test');await waitFor(()=>!workflow.isBusy());assert.equal(d.status,'needs_configuration');assert.equal(extractionCalls,0);
+ const reviewed={...doc(),extractionWarnings:[{page:'2',quote:'[无法辨认]',reason:'分数识别不清'}]};
+ reviewed.autoReview=buildDocumentReview(admissionsFixture(),reviewed,[]);
+ const html=renderDocumentReview(reviewed,[],ui);
+ assert.match(html,/第2页识别疑点：分数识别不清/);assert.match(html,/<mark>\[无法辨认\]<\/mark>/);
+ assert.equal((html.match(/data-act="confirm-document"/g)||[]).length,1);
+});
+
 test('a broken model connection retries once automatically without re-parsing the file',async()=>{
  const d=doc();let calls=0,parses=0;
  const workflow=createDocumentWorkflow({documents:()=>[d],programs:()=>[],config:()=>({apiKey:'fake'}),saveStatus:(v,s)=>v.status=s,retryDelay:1,parse:async()=>{parses++;},extract:async()=>{calls++;if(calls===1)throw Object.assign(new Error('connection lost'),{retryable:true});return {extracted:admissionsFixture()};}});

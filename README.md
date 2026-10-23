@@ -6,7 +6,13 @@
 
 首期内置立命馆大学 2027 AO 英语本科 GLA、JDP、GS、CRPS、ISSE 五个项目，28条语言考试／版本门槛和11组申请轮次。资料来自用户提供的23页手册及已核对的135条分析记录。原文及关键词库随源码提供，真实学生数据不会写入Git。
 
-## 运行
+## 线上运行与发布
+
+正式工作台：**https://sgu.up.railway.app/**。Railway运行应用，Supabase保存正式业务数据、原文件、提取文本及模型配置。上传、解析和整理全部在线完成，无需本机服务。后续采用“修改代码与隔离测试 → 推送main → 核对Railway部署 → 在线验证”的流程，常规修改直接发布，完整约定见[AGENTS.md](AGENTS.md)。
+
+## 可选的独立开发环境
+
+以下本机启动说明仅保留供隔离开发或恢复使用，不是日常工作入口或上线验收条件。测试不得使用正式数据库创建虚拟档案。
 
 需要 **Node.js 24.15或以上**，使用Node原生HTTP、浏览器ES模块及`pg`数据库驱动，无前端构建步骤。配置`DATABASE_URL`时连接共享PostgreSQL，否则继续使用原生SQLite。
 
@@ -76,7 +82,13 @@ if ($LASTEXITCODE -eq 0) {
 
 本地解析不是通用大模型。无法处理的精细问题会明确提示，不将未识别条件静默丢弃。可在`.env`设置`LLM_BASE_URL`、`LLM_API_KEY`、`LLM_MODEL`接入支持JSON输出的OpenAI兼容Chat Completions接口。只有问题文本会提交给配置的服务；项目答案仍由已核对的数据库规则生成。模型不可用时回退本地解析并提示核对。没有配置凭据时不会调用外部模型。
 
-## 本机MinerU
+## 线上PDF解析
+
+Docker镜像包含Poppler，默认`PDF_PARSER=cloud`。文字PDF由服务端直接提取；空文字层、编码异常或包含较大图片的页面，通过已配置的OpenAI模型逐页识别，防止遗漏扫描表格。物理页码由服务器生成，保留空白页位置；识别疑点带页码进入现有高亮核对区，不增加逐条确认步骤。
+
+完整文件才保存提取结果。页数不一致、识别中断、截断或拒答均不会冒充处理完成；原PDF始终保留在Supabase。缺少模型密钥时等待配置，保存后自动继续。重新部署可从共享队列恢复任务，已提取全文继续复用。PDF文件输入使用[OpenAI官方接口](https://developers.openai.com/api/docs/guides/file-inputs)，`store:false`；仅发送需要识别的招生页面，不发送学生档案。
+
+### 旧本机MinerU兼容方式（可选）
 
 复制`.env.example`为`.env`，配置已安装的可执行文件。Windows示例：
 
@@ -107,17 +119,17 @@ MINERU_BIN_DIR=D:/AI-Yang.cn/tools/mineru/bin
 
 ## 数据与协作
 
-- 配置`DATABASE_URL`：本地与Railway连接同一个Supabase数据库的私有`sgu` schema。原有账号、会话、学生、项目、规则版本、匹配快照和审计记录完整保存；`files`表保存原文件和提取文本并校验SHA-256，`settings`表保存OpenAI配置。云端重新部署不依赖实例磁盘保留这些内容。
+- Railway配置`DATABASE_URL`连接Supabase数据库的私有`sgu` schema，作为正式数据来源。原有账号、会话、学生、项目、规则版本、匹配快照和审计记录完整保存；`files`表保存原文件和提取文本并校验SHA-256，`settings`表保存OpenAI配置。云端重新部署不依赖实例磁盘保留这些内容。
 - 未配置`DATABASE_URL`：继续读取原有`.data/sgu.db`、`.data/uploads/`和`.data/openai.json`。连接已配置但失败时停止启动，绝不静默退回空SQLite库。
 - Supabase使用Session pooler（5432），启用并验证TLS证书；应用schema启用RLS，拒绝`PUBLIC`、`anon`和`authenticated`访问。密码与密钥只供后端使用，不回传页面、日志或业务JSON导出。
 - `.env`、`.data/`、`.qa/`及本机解析缓存`blobs/`、服务锁文件均在`.gitignore`中；仓库只存程序、公开招生资料与隔离的自动测试夹具，测试学生不会进入正式初始化。
 - 应定期备份数据库及原文件。“团队设置”可导出业务JSON（不含密码和登录会话）。SQLite完整恢复需复制完整数据目录；Supabase应备份私有`sgu` schema，包含`files`和`settings`。
 - `apply-school-update.ps1` 仅重启并检查服务，不再清空学生档案、匹配记录或操作历史。普通启动同样保留现有数据。
-- 连接相同`DATABASE_URL`的服务实时共享同一份数据；未配置时各自的SQLite仍互相独立。共享写事务串行化并检查版本，过期修改返回409；文档任务使用数据库锁防止本地和云端重复整理。没有MinerU的云端保留PDF排队状态，由运行中的本机MinerU工作进程接手，期间可关闭网页；本机SGU服务须保持运行。
+- 共享写事务串行化并检查版本，过期修改返回409；文档任务使用数据库锁防止滚动部署时重复整理。Railway独立处理PDF和模型整理，期间可以关闭网页或个人电脑。未配置DATABASE_URL时各自SQLite仍独立，仅供兼容运行。
 
 已有SQLite资料不会因填写连接地址自动上传。首次迁移用`scripts/migrate-database.mjs`：先保存线上只读快照，再合并本地只读快照，默认仅预览；显式`--apply`才写入目标。线上同名账号和密码优先、原会话保留；相同项目版本内容必须一致才允许补齐后续版本，冲突会中止。整个导入在一个事务内完成，重复执行不会重复创建记录。备份包含凭据，只能存放于忽略的私有目录。
 
-线上工作台已部署到 **https://sgu.up.railway.app/**。后续修改统一采用“本地修改与验证 → 推送`main` → 检查Railway部署成功 → 检查线上功能”的流程；用户已授权常规更新直接上线。发布目标见 [AGENTS.md](AGENTS.md)。本地和线上配置同一个`DATABASE_URL`，共享数据、上传资料和模型配置；代码发布不覆盖已有记录。
+用户已授权常规更新直接上线；以Railway运行结果验收，不要求本机同步运行。代码发布不覆盖已有业务记录。
 
 Railway部署未设置`APP_ORIGIN`时，程序使用平台提供的`RAILWAY_PUBLIC_DOMAIN`识别正式HTTPS地址，避免将正常提交误判为跨站请求（[平台变量说明](https://docs.railway.com/variables/reference)）。独立反向代理或其他自定义域名应将`APP_ORIGIN`设为实际访问地址，例如`https://school.example`；不包含页面路径。HTTPS会话自动设置Secure Cookie，仍保留来源、JSON请求标识和CSRF校验。开发默认使用本机HTTP地址，不信任客户端传入的转发头。
 
@@ -127,7 +139,7 @@ Railway部署未设置`APP_ORIGIN`时，程序使用平台提供的`RAILWAY_PUBL
 docker compose up -d --build
 ```
 
-默认容器映射到服务器本地3210端口，数据存入具名卷；外部访问由部署方的反向代理承担。容器内使用MinerU需要另行配置本地可执行环境，不自动连接Windows路径。
+默认容器映射到服务器本地3210端口；正式部署配置DATABASE_URL，外部访问由部署方的反向代理承担。镜像已包含线上PDF解析组件，无需连接Windows路径。
 
 ## 验证
 
