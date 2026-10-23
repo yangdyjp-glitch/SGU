@@ -7,7 +7,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { admissionsText } from './fixtures/admissions.mjs';
 
 test('upload → automatic organization → overall confirmation, configuration privacy and stale review protection',async t=>{
- const child=spawn(process.execPath,['--import','./tests/fixtures/openai-fetch.mjs','server.mjs'],{env:{...process.env,PORT:'3224',HOST:'127.0.0.1',DATA_DIR:'.qa/auto-api-'+randomUUID(),MINERU_BIN:'',OPENAI_API_KEY:''},stdio:['ignore','pipe','pipe'],windowsHide:true});
+ const child=spawn(process.execPath,['--import','./tests/fixtures/openai-fetch.mjs','server.mjs'],{env:{...process.env,DATABASE_URL: '', DATABASE_SCHEMA: '', PORT:'3224',HOST:'127.0.0.1',DATA_DIR:'.qa/auto-api-'+randomUUID(),MINERU_BIN:'',OPENAI_API_KEY:''},stdio:['ignore','pipe','pipe'],windowsHide:true});
  t.after(async()=>{child.kill();await once(child,'exit').catch(()=>{});});
  await Promise.race([once(child.stdout,'data'),once(child,'exit').then(()=>{throw new Error('server exited early');})]);
  let cookie='',csrf='';const base='http://127.0.0.1:3224';

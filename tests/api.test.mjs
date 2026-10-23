@@ -7,8 +7,9 @@ import { randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 const base='http://127.0.0.1:3222';
 test('authenticated team workflow, version history, conflicts and ingestion',async t=>{
- const child=spawn(process.execPath,['server.mjs'],{env:{...process.env,PORT:'3222',HOST:'127.0.0.1',DATA_DIR:'.qa/test-'+randomUUID(),MINERU_BIN:'',OPENAI_API_KEY:'',APP_ORIGIN:'',RAILWAY_PUBLIC_DOMAIN:'',COOKIE_SECURE:''},stdio:['ignore','pipe','pipe'],windowsHide:true});
- t.after(async()=>{child.kill();await once(child,'exit').catch(()=>{});});
+ const pgURL=process.env.SGU_TEST_DATABASE_URL||'',pgSchema='sgu_test_api_'+randomUUID().replaceAll('-','');
+ const child=spawn(process.execPath,['server.mjs'],{env:{...process.env,DATABASE_URL:pgURL,DATABASE_SCHEMA:pgURL?pgSchema:'',PORT:'3222',HOST:'127.0.0.1',DATA_DIR:'.qa/test-'+randomUUID(),MINERU_BIN:'',OPENAI_API_KEY:'',APP_ORIGIN:'',RAILWAY_PUBLIC_DOMAIN:'',COOKIE_SECURE:''},stdio:['ignore','pipe','pipe'],windowsHide:true});
+ t.after(async()=>{child.kill();await once(child,'exit').catch(()=>{});if(pgURL){const {openDatabase}=await import('../lib/database.mjs');const cleanup=await openDatabase({url:pgURL,schema:pgSchema});try{await cleanup.exec(`DROP SCHEMA IF EXISTS ${pgSchema} CASCADE`);}finally{await cleanup.close();}}});
  await Promise.race([once(child.stdout,'data'),once(child,'exit').then(()=>{throw new Error('server exited early');})]);
  let cookie='',csrf='';
  async function req(path,body,extra={}){const res=await fetch(base+'/api'+path,{method:body?'POST':'GET',headers:{'Content-Type':'application/json','X-SGU-Request':'1','X-CSRF-Token':csrf,Cookie:cookie,Origin:base,...extra},...(body?{body:JSON.stringify(body)}:{})});return {status:res.status,headers:res.headers,body:await res.json()};}
@@ -45,6 +46,7 @@ test('authenticated team workflow, version history, conflicts and ingestion',asy
  });
  await t.test('failed parsing and retries also publish revisions and replace stale errors',async()=>{
   const upload=(await req('/documents',{filename:'parse-failure.pdf',base64:Buffer.from('%PDF-1.4\nlocal test fixture').toString('base64')})).body;
+  if(pgURL){const doc=(await req('/documents/'+upload.id)).body;assert.equal(doc.status,'queued');assert.equal(doc.error,null);return;}
   for(let attempt=1;attempt<=2;attempt++){
    if(attempt===2){const started=await req('/documents/'+upload.id+'/parse',{});assert.equal(started.status,202);assert.equal(started.body.document.status,'queued');assert.equal(started.body.document.error,null);}
    let doc;for(let i=0;i<50;i++){doc=(await req('/documents/'+upload.id)).body;if(!['queued','parsing','extracting'].includes(doc.status))break;await delay(20);}

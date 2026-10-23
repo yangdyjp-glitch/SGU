@@ -5,6 +5,8 @@ $sguPowerShell = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powe
 if ($LASTEXITCODE -ne 0) { throw 'Could not stop the recorded SGU process.' }
 $sguStillRunning = $false
 try {
+    & npm.cmd ci --omit=dev --ignore-scripts --no-audit --no-fund
+    if ($LASTEXITCODE -ne 0) { throw 'SGU dependency installation failed.' }
     $sguState = Invoke-RestMethod -Uri 'http://127.0.0.1:3210/api/auth/state' -TimeoutSec 2
     $sguStillRunning = $null -ne $sguState.setup
 } catch {}

@@ -31,7 +31,7 @@ test('an explicit custom origin takes precedence and invalid origin configuratio
 
 test('Railway-proxied account creation and login work while cross-site and CSRF attacks remain rejected', async t => {
   const base = 'http://127.0.0.1:3228', publicOrigin = 'https://sgu.up.railway.app';
-  const child = spawn(process.execPath, ['server.mjs'], { env: { ...process.env, PORT: '3228', HOST: '127.0.0.1', DATA_DIR: '.qa/origin-' + randomUUID(), APP_ORIGIN: '', RAILWAY_PUBLIC_DOMAIN: 'sgu.up.railway.app', COOKIE_SECURE: '', MINERU_BIN: '', OPENAI_API_KEY: '' }, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
+  const child = spawn(process.execPath, ['server.mjs'], { env: { ...process.env, DATABASE_URL: '', DATABASE_SCHEMA: '', PORT: '3228', HOST: '127.0.0.1', DATA_DIR: '.qa/origin-' + randomUUID(), APP_ORIGIN: '', RAILWAY_PUBLIC_DOMAIN: 'sgu.up.railway.app', COOKIE_SECURE: '', MINERU_BIN: '', OPENAI_API_KEY: '' }, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
   t.after(async () => { child.kill(); if (child.exitCode === null) await once(child, 'exit'); });
   await Promise.race([once(child.stdout, 'data'), once(child, 'exit').then(() => { throw new Error('origin test server exited early'); })]);
   const post = async (path, body, headers = {}) => {

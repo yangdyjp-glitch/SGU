@@ -8,15 +8,16 @@
 
 ## 运行
 
-需要 **Node.js 24.15或以上**，使用Node原生HTTP、SQLite和浏览器ES模块，无第三方运行依赖、无构建步骤。
+需要 **Node.js 24.15或以上**，使用Node原生HTTP、浏览器ES模块及`pg`数据库驱动，无前端构建步骤。配置`DATABASE_URL`时连接共享PostgreSQL，否则继续使用原生SQLite。
 
 ```powershell
 git clone https://github.com/yangdyjp-glitch/SGU.git
 cd SGU
+npm.cmd ci
 npm.cmd start
 ```
 
-访问 **http://127.0.0.1:3210**。首次打开使用账号和密码创建管理员，不再填写姓名；随后在“团队设置”取得邀请码，同事使用各自账号加入。密码至少8位。页面身份与新增操作记录统一显示账号，所有员工均可编辑项目规则，保存直接生效。实际账号保存在本机数据库，仓库不包含预设密码。
+访问 **http://127.0.0.1:3210**。首次打开使用账号和密码创建管理员，不再填写姓名；随后在“团队设置”取得邀请码，同事使用各自账号加入。密码至少8位。页面身份与新增操作记录统一显示账号，所有员工均可编辑项目规则，保存直接生效。实际账号保存在所配置的数据库，仓库不包含预设密码。
 
 上面的 Windows 命令使用 `npm.cmd`，避免 PowerShell 把 `npm` 解析为被执行策略拦截的 `npm.ps1`；其他系统使用 `npm start`。这种方式在前台运行，需要保持终端开启。
 
@@ -106,15 +107,17 @@ MINERU_BIN_DIR=D:/AI-Yang.cn/tools/mineru/bin
 
 ## 数据与协作
 
-- `.data/sgu.db`：SQLite数据库，包含员工、会话、学生、项目当前版本、历史规则、匹配快照和操作记录。
-- `.data/uploads/`：员工上传的原始文件及提取文本。
-- `.data/openai.json`：服务器保存的模型与密钥；不回传页面、不写入操作日志或JSON导出，也不进入Git。迁移完整数据目录时应按凭据文件保护。
+- 配置`DATABASE_URL`：本地与Railway连接同一个Supabase数据库的私有`sgu` schema。原有账号、会话、学生、项目、规则版本、匹配快照和审计记录完整保存；`files`表保存原文件和提取文本并校验SHA-256，`settings`表保存OpenAI配置。云端重新部署不依赖实例磁盘保留这些内容。
+- 未配置`DATABASE_URL`：继续读取原有`.data/sgu.db`、`.data/uploads/`和`.data/openai.json`。连接已配置但失败时停止启动，绝不静默退回空SQLite库。
+- Supabase使用Session pooler（5432），启用并验证TLS证书；应用schema启用RLS，拒绝`PUBLIC`、`anon`和`authenticated`访问。密码与密钥只供后端使用，不回传页面、日志或业务JSON导出。
 - `.env`、`.data/`、`.qa/`及本机解析缓存`blobs/`、服务锁文件均在`.gitignore`中；仓库只存程序、公开招生资料与隔离的自动测试夹具，测试学生不会进入正式初始化。
-- `.data/`与上传文件应定期备份。“团队设置”可导出数据JSON（不含密码和登录会话）；完整恢复以停服复制整个`.data/`为准。
+- 应定期备份数据库及原文件。“团队设置”可导出业务JSON（不含密码和登录会话）。SQLite完整恢复需复制完整数据目录；Supabase应备份私有`sgu` schema，包含`files`和`settings`。
 - `apply-school-update.ps1` 仅重启并检查服务，不再清空学生档案、匹配记录或操作历史。普通启动同样保留现有数据。
-- 多人须访问**同一台服务器**。每个人自行运行一份程序会得到独立数据，不会自动跨机器同步。
+- 连接相同`DATABASE_URL`的服务实时共享同一份数据；未配置时各自的SQLite仍互相独立。共享写事务串行化并检查版本，过期修改返回409；文档任务使用数据库锁防止本地和云端重复整理。没有MinerU的云端保留PDF排队状态，由运行中的本机MinerU工作进程接手，期间可关闭网页；本机SGU服务须保持运行。
 
-线上工作台已部署到 **https://sgu.up.railway.app/**。后续修改统一采用“本地修改与验证 → 推送`main` → 检查Railway部署成功 → 检查线上功能”的流程；用户已授权常规更新直接上线。发布目标见 [AGENTS.md](AGENTS.md)。本地与线上保留各自数据库、上传资料及密钥，代码发布不覆盖现有业务数据。
+已有SQLite资料不会因填写连接地址自动上传。首次迁移用`scripts/migrate-database.mjs`：先保存线上只读快照，再合并本地只读快照，默认仅预览；显式`--apply`才写入目标。线上同名账号和密码优先、原会话保留；相同项目版本内容必须一致才允许补齐后续版本，冲突会中止。整个导入在一个事务内完成，重复执行不会重复创建记录。备份包含凭据，只能存放于忽略的私有目录。
+
+线上工作台已部署到 **https://sgu.up.railway.app/**。后续修改统一采用“本地修改与验证 → 推送`main` → 检查Railway部署成功 → 检查线上功能”的流程；用户已授权常规更新直接上线。发布目标见 [AGENTS.md](AGENTS.md)。本地和线上配置同一个`DATABASE_URL`，共享数据、上传资料和模型配置；代码发布不覆盖已有记录。
 
 Railway部署未设置`APP_ORIGIN`时，程序使用平台提供的`RAILWAY_PUBLIC_DOMAIN`识别正式HTTPS地址，避免将正常提交误判为跨站请求（[平台变量说明](https://docs.railway.com/variables/reference)）。独立反向代理或其他自定义域名应将`APP_ORIGIN`设为实际访问地址，例如`https://school.example`；不包含页面路径。HTTPS会话自动设置Secure Cookie，仍保留来源、JSON请求标识和CSRF校验。开发默认使用本机HTTP地址，不信任客户端传入的转发头。
 

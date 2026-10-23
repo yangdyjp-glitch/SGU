@@ -30,7 +30,9 @@ flowchart TD
 
 规则包含学历路径`paths`、项目通用`hardConditions`、多份语言考试门槛`language`、豁免路径`waivers`、轮次`rounds`、材料`materials`、学费`tuition`及组合申请`combination`。每条可判断条件保留来源文件、页码、引用及规则编号。
 
-数据库表为users、sessions、students、programs、versions、matches、events、documents与meta。当前版本更新、不可变版本插入及审计事件在同一SQLite事务内提交。写入必须带前一次读取的版本号；不匹配返回409及服务器当前版本，前端展示差异。
+数据库表为users、sessions、students、programs、versions、matches、events、documents与meta；共享模式另用files保存原文件和提取文本、settings保存后端模型配置。配置DATABASE_URL时，异步存储适配器直连PostgreSQL（Supabase私有sgu schema）；未配置时兼容原SQLite，不另建同步副本。当前版本更新、不可变版本插入及审计事件在同一事务内提交。写入必须带前一次读取的版本号；不匹配返回409及服务器当前版本，前端展示差异。PostgreSQL通过事务级advisory lock串行化跨实例写入，SQLite通过异步队列持有BEGIN IMMEDIATE直至提交。
+
+上传文件与文档记录在共享数据库中一起持久化，不依赖Railway临时文件系统。工作进程定期检查持久化队列，以会话级advisory lock独占某份文档；无MinerU的实例不认领需要本机解析的PDF。恢复调度不能把另一实例正在进行的状态、进度或核对意见覆盖成queued。已有全文可以在任一实例继续语义整理。
 
 `document-workflow.mjs` 管理持久化单任务队列：`queued → parsing → extracting → review → published`。没有模型配置转 `needs_configuration`；失败保留全文和已有草稿，短暂传输失败自动重试一次。重启恢复未完成任务。`document-ai.mjs` 只向官方OpenAI地址发送原文和核对意见，流式读取仅在 `response.completed` 后解析并通过严格JSON Schema校验，拒绝截断、拒答和不完整结构。
 
@@ -62,11 +64,11 @@ GLA澳大利亚国内身份例外、Group A英语教育、JDP四年课程及无E
 
 核心字段仅新增F021—F025，原19类被排除主题不建立独立模块。来源数据原始135条保留作追溯；网页按已确认范围过滤，不将全部来源主题变为筛选字段。
 
-`.data`中的数据属于部署实例。Git保存代码和初始招生数据，推送Git不会修改已运行实例的用户规则；更新初始数据需提供明确迁移，避免覆盖人工修改。
+未连接共享数据库时，`.data`中的数据属于部署实例。Git保存代码和初始招生数据；首次切换共享库需显式迁移已有资料，保留原始JSON、版本、账号和文件。线上快照优先与本地快照合并，相同版本冲突即停止。共享数据库连接失败不得回退到SQLite或重新初始化五个项目。
 
 ## 实现取舍
 
-- 原生浏览器模块与CSS，避免本地依赖安装；Node 24原生SQLite持久化共享状态。
+- 原生浏览器模块与CSS，无前端构建；Node 24原生SQLite或pg驱动连接PostgreSQL，使用相同业务模型。
 - 默认本地自然语言解析，有语义模型适配接口，未配置时不声称通用AI已连接。
 - PDF由本机MinerU标准解析；OpenAI生成的完整规则与正式项目隔离，必须经员工整体确认才发布。
 - 员工账号采用scrypt密码哈希，随机会话令牌仅在HttpOnly Cookie，服务端保存令牌哈希；写入验证来源和CSRF。

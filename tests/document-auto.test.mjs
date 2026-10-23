@@ -14,6 +14,7 @@ import { renderSchoolDetail } from '../public/school-detail.js';
 import { seedPrograms } from '../lib/seed.mjs';
 import { queryPrograms } from '../lib/query.mjs';
 process.env.DATA_DIR='.qa/auto-unit-'+randomUUID();
+process.env.DATABASE_URL='';
 const {createDocumentWorkflow,emptyManualDraft}=await import('../lib/document-workflow.mjs');
 const {confirmDocument}=await import('../lib/document-publish.mjs');
 const store=await import('../lib/store.mjs');
@@ -21,6 +22,23 @@ const doc=()=>({id:randomUUID(),filename:'example.pdf',name:'example.pdf',text:a
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ui={esc,icon:()=>'',badge:esc,tag:esc,button:(label,act,extra='',cls='')=>`<button data-act="${act}" ${extra}>${label}</button>`,evidence:()=>''};
 const waitFor=async(test)=>{for(let i=0;i<150;i++){if(test())return;await delay(10);}throw new Error('workflow did not settle');};
+
+test('shared queue recovery never resets another worker status or progress',async()=>{
+ const saved={...doc(),status:'extracting',statusVersion:8,organizingProgress:{page:12},autoRetryCount:1,reviewerFeedback:'保留核对意见'};let statusWrites=0;
+ const workflow=createDocumentWorkflow({documents:async()=>[structuredClone(saved)],programs:async()=>[],config:async()=>({apiKey:'test'}),canProcess:()=>true,
+  mutate:fn=>fn(),saveStatus:()=>{statusWrites++;},withLease:async(id,fn)=>({acquired:true,result:await fn()}),retryDelay:10});
+ // Inspect the durable result of resume without starting an endless mock lease.
+ const queued=await workflow.enqueue(saved.id,'系统',{resume:true});
+ assert.equal(queued.status,'extracting');assert.equal(queued.autoRetryCount,1);assert.deepEqual(queued.organizingProgress,{page:12});assert.equal(statusWrites,0);
+ // The next read observes completion by the real owner and drains the local queue.
+ saved.status='published';
+});
+
+test('a worker without the required parser leaves the shared job queued for a capable worker',async()=>{
+ const saved={...doc(),status:'queued',text:''};let calls=0;
+ const workflow=createDocumentWorkflow({documents:async()=>[structuredClone(saved)],programs:async()=>[],config:async()=>({apiKey:'test'}),canProcess:()=>false,mutate:fn=>fn(),parse:()=>{calls++;},saveStatus:()=>{calls++;}});
+ await workflow.resumePending();assert.equal(workflow.isBusy(),false);assert.equal(calls,0);
+});
 
 test('strict schema requires complete fields while representing unknown dates, thresholds and facts explicitly',()=>{
  const data=admissionsFixture();assert.deepEqual(validateSchema(data),[]);
@@ -69,44 +87,44 @@ test('automatic review highlights doubts and preserves all details with just one
 test('missing model configuration pauses after extraction; saving configuration resumes once, reuses text and retains draft until a new review is complete',async()=>{
  const d={...doc(),text:undefined,status:'uploaded'},saved=new Map([[d.id,d]]);let key='',parses=0,calls=0;const statuses=[];
  const workflow=createDocumentWorkflow({documents:()=>[...saved.values()].map(d=>structuredClone(d)),programs:()=>[],config:()=>({apiKey:key}),saveStatus:(value,status,actor,error)=>{Object.assign(value,{status,error,statusVersion:(value.statusVersion||0)+1});saved.set(value.id,structuredClone(value));statuses.push(status);},parse:async value=>{parses++;value.text=admissionsText;},extract:async()=>{calls++;await delay(25);return {extracted:admissionsFixture(),model:'test'};}});
- workflow.enqueue(d.id,'test');workflow.enqueue(d.id,'test');await waitFor(()=>!workflow.isBusy());assert.equal(saved.get(d.id).status,'needs_configuration');assert.equal(parses,1);assert.equal(calls,0);
- key='fake';workflow.resumePending();workflow.resumePending();await waitFor(()=>!workflow.isBusy());assert.equal(calls,1);assert.equal(parses,1);assert.equal(saved.get(d.id).status,'review');assert.equal(saved.get(d.id).autoReview.version,1);
- workflow.enqueue(d.id,'test',{feedback:'核对意见',expectedReviewVersion:1});assert.equal(saved.get(d.id).autoReview.version,1);await waitFor(()=>!workflow.isBusy());assert.equal(saved.get(d.id).autoReview.version,2);assert.equal(parses,1);assert.deepEqual(statuses,['queued','needs_configuration','queued','extracting','review','queued','extracting','review']);
+ await Promise.all([workflow.enqueue(d.id,'test'),workflow.enqueue(d.id,'test')]);await waitFor(()=>!workflow.isBusy());assert.equal(saved.get(d.id).status,'needs_configuration');assert.equal(parses,1);assert.equal(calls,0);
+ key='fake';await workflow.resumePending();await workflow.resumePending();await waitFor(()=>!workflow.isBusy());assert.equal(calls,1);assert.equal(parses,1);assert.equal(saved.get(d.id).status,'review');assert.equal(saved.get(d.id).autoReview.version,1);
+ await workflow.enqueue(d.id,'test',{feedback:'核对意见',expectedReviewVersion:1});assert.equal(saved.get(d.id).autoReview.version,1);await waitFor(()=>!workflow.isBusy());assert.equal(saved.get(d.id).autoReview.version,2);assert.equal(parses,1);assert.deepEqual(statuses,['queued','needs_configuration','queued','extracting','review','queued','extracting','review']);
 });
 
 test('queue resumes interrupted correction jobs and processes documents sequentially',async()=>{
  const first=doc(),second=doc();first.status='extracting';first.autoReview={version:1};second.status='queued';const records=[first,second];let active=0,peak=0;
  const workflow=createDocumentWorkflow({documents:()=>records,programs:()=>[],config:()=>({apiKey:'fake'}),saveStatus:(d,s)=>d.status=s,extract:async()=>{active++;peak=Math.max(peak,active);await delay(20);active--;return {extracted:admissionsFixture()};}});
- workflow.resumePending();await waitFor(()=>!workflow.isBusy());assert.equal(peak,1);assert.equal(first.status,'review');assert.equal(first.autoReview.version,2);assert.equal(second.status,'review');
+ await workflow.resumePending();await waitFor(()=>!workflow.isBusy());assert.equal(peak,1);assert.equal(first.status,'review');assert.equal(first.autoReview.version,2);assert.equal(second.status,'review');
 });
 
 test('a broken model connection retries once automatically without re-parsing the file',async()=>{
  const d=doc();let calls=0,parses=0;
  const workflow=createDocumentWorkflow({documents:()=>[d],programs:()=>[],config:()=>({apiKey:'fake'}),saveStatus:(v,s)=>v.status=s,retryDelay:1,parse:async()=>{parses++;},extract:async()=>{calls++;if(calls===1)throw Object.assign(new Error('connection lost'),{retryable:true});return {extracted:admissionsFixture()};}});
- workflow.enqueue(d.id,'test');await waitFor(()=>!workflow.isBusy());assert.equal(calls,2);assert.equal(parses,0);assert.equal(d.status,'review');
+ await workflow.enqueue(d.id,'test');await waitFor(()=>!workflow.isBusy());assert.equal(calls,2);assert.equal(parses,0);assert.equal(d.status,'review');
  const bad=doc();let failedCalls=0;
  const failing=createDocumentWorkflow({documents:()=>[bad],programs:()=>[],config:()=>({apiKey:'fake'}),saveStatus:(v,s)=>v.status=s,retryDelay:1,extract:async()=>{failedCalls++;throw Object.assign(new Error('connection lost'),{retryable:true});}});
- failing.enqueue(bad.id,'test');await waitFor(()=>!failing.isBusy());assert.equal(failedCalls,2);assert.equal(bad.status,'error');
+ await failing.enqueue(bad.id,'test');await waitFor(()=>!failing.isBusy());assert.equal(failedCalls,2);assert.equal(bad.status,'error');
 });
 
 test('legacy empty shells migrate automatically with a preserved copy; manual rules are never replaced',async()=>{
  const first=doc(),second=doc(),draft={target:{mode:'create'},note:'',program:blankDocumentProgram({school:'早稻田大学',year:2027},first.id)};first.projectDraft=draft;second.projectDraft=structuredClone(draft);second.projectDraft.program.paths=admissionsFixture().programs[0].paths;
  assert.equal(emptyManualDraft(draft),true);assert.equal(emptyManualDraft(second.projectDraft),false);
  const workflow=createDocumentWorkflow({documents:()=>[first,second],programs:()=>[],config:()=>({apiKey:'fake'}),saveStatus:(d,s)=>d.status=s,extract:async()=>({extracted:admissionsFixture()})});
- workflow.resumePending({includeLegacy:true});await waitFor(()=>!workflow.isBusy());assert.deepEqual(first.previousManualDraft,draft);assert.equal(first.projectDraft,undefined);assert.equal(first.autoReview.entries.length,2);assert.ok(second.projectDraft.program.paths.length);assert.equal(second.autoReview,undefined);assert.throws(()=>workflow.enqueue(second.id,'test'),/不会覆盖/);
+ await workflow.resumePending({includeLegacy:true});await waitFor(()=>!workflow.isBusy());assert.deepEqual(first.previousManualDraft,draft);assert.equal(first.projectDraft,undefined);assert.equal(first.autoReview.entries.length,2);assert.ok(second.projectDraft.program.paths.length);assert.equal(second.autoReview,undefined);await assert.rejects(()=>workflow.enqueue(second.id,'test'),/不会覆盖/);
 });
 
-test('one document publishes all projects atomically, rejects stale drafts and preserves students and prior rules',()=>{
- const d=doc();d.autoReview=buildDocumentReview(admissionsFixture(),d,store.getPrograms());store.saveDocument(d);
- const before=JSON.stringify(store.getPrograms());store.saveStudent({id:'retained',name:'保留的学生'},'test');const student=JSON.stringify(store.getStudent('retained'));
- assert.throws(()=>confirmDocument(d.id,{expectedReviewVersion:0,confirmed:true},'test'),/已更新/);assert.equal(JSON.stringify(store.getPrograms()),before);
- const collision=d.autoReview.entries[1].program;store.db.prepare('INSERT INTO versions VALUES(?,?,?,?,?,?,?,?)').run('test-collision',collision.id,1,JSON.stringify(collision),'test','rollback test',store.now(),null);
- assert.throws(()=>confirmDocument(d.id,{expectedReviewVersion:1,confirmed:true},'test'));assert.equal(JSON.stringify(store.getPrograms()),before);assert.equal(store.getDocuments().find(x=>x.id===d.id).status,'review');
- store.db.prepare('DELETE FROM versions WHERE id=?').run('test-collision');
- const result=confirmDocument(d.id,{expectedReviewVersion:1,confirmed:true},'test');assert.equal(result.programs.length,2);assert.equal(result.document.status,'published');assert.equal(result.programs[0].verificationNotes.length,1);assert.equal(store.getPrograms().length,7);assert.equal(JSON.stringify(store.getStudent('retained')),student);
- assert.equal(confirmDocument(d.id,{expectedReviewVersion:1,confirmed:true},'test').alreadyPublished,true);assert.equal(store.db.prepare('SELECT count(*) n FROM versions').get().n,7);
- const updated=doc();updated.autoReview=buildDocumentReview(admissionsFixture(),updated,store.getPrograms());store.saveDocument(updated);store.saveProgram(result.programs[1],'coworker','并发修改',1);
- assert.throws(()=>confirmDocument(updated.id,{expectedReviewVersion:1,confirmed:true},'test'),/核对期间被更新/);assert.equal(store.getProgram(result.programs[0].id).version,1);
+test('one document publishes all projects atomically, rejects stale drafts and preserves students and prior rules',async()=>{
+ const d=doc();d.autoReview=buildDocumentReview(admissionsFixture(),d,await store.getPrograms());await store.saveDocument(d);
+ const before=JSON.stringify(await store.getPrograms());await store.saveStudent({id:'retained',name:'保留的学生'},'test');const student=JSON.stringify(await store.getStudent('retained'));
+ await assert.rejects(()=>confirmDocument(d.id,{expectedReviewVersion:0,confirmed:true},'test'),/已更新/);assert.equal(JSON.stringify(await store.getPrograms()),before);
+ const collision=d.autoReview.entries[1].program;await store.db.prepare('INSERT INTO versions VALUES(?,?,?,?,?,?,?,?)').run('test-collision',collision.id,1,JSON.stringify(collision),'test','rollback test',store.now(),null);
+ await assert.rejects(()=>confirmDocument(d.id,{expectedReviewVersion:1,confirmed:true},'test'));assert.equal(JSON.stringify(await store.getPrograms()),before);assert.equal((await store.getDocuments()).find(x=>x.id===d.id).status,'review');
+ await store.db.prepare('DELETE FROM versions WHERE id=?').run('test-collision');
+ const result=await confirmDocument(d.id,{expectedReviewVersion:1,confirmed:true},'test');assert.equal(result.programs.length,2);assert.equal(result.document.status,'published');assert.equal(result.programs[0].verificationNotes.length,1);assert.equal((await store.getPrograms()).length,7);assert.equal(JSON.stringify(await store.getStudent('retained')),student);
+ assert.equal((await confirmDocument(d.id,{expectedReviewVersion:1,confirmed:true},'test')).alreadyPublished,true);assert.equal((await store.db.prepare('SELECT count(*) n FROM versions').get()).n,7);
+ const updated=doc();updated.autoReview=buildDocumentReview(admissionsFixture(),updated,await store.getPrograms());await store.saveDocument(updated);await store.saveProgram(result.programs[1],'coworker','并发修改',1);
+ await assert.rejects(()=>confirmDocument(updated.id,{expectedReviewVersion:1,confirmed:true},'test'),/核对期间被更新/);assert.equal((await store.getProgram(result.programs[0].id)).version,1);
 });
 
 test('unknown imported requirements never become automatic passes and absent dates cannot crash matching',()=>{
@@ -170,13 +188,13 @@ test('validation upgrades preserve model doubts and formal values, without touch
  d.status='published';assert.equal(refreshReviewValidation(d,[]),null);
 });
 
-test('published conditional tuition retains every fee, allows overall confirmation and never treats null as zero',()=>{
+test('published conditional tuition retains every fee, allows overall confirmation and never treats null as zero',async()=>{
  const d=doc(),input=admissionsFixture();
  const quote='Tuition: Japanese Students: 267,900 JPY / semester (535,800 JPY / year) *subject to change International Students: 450,000 JPY / semester (900,000 JPY / year) *subject to change';
  d.text+='\n<!-- page 3 of 3 -->\n'+quote.replaceAll('*','\\*');
  const tuition={status:'published',amount:null,currency:'JPY',period:'学年',detail:'日本学生等：535800日元/年、267900日元/学期；国际学生：900000日元/年、450000日元/学期。国际学生指持留学在留资格在日居住者；金额暂定且可调整。',source:{page:'3',quote}};
  input.programs.forEach(p=>{p.name+='分档收费';p.englishName+=' Tiered tuition';p.tuition=structuredClone(tuition);});
- d.autoReview=buildDocumentReview(input,d,store.getPrograms());
+ d.autoReview=buildDocumentReview(input,d,await store.getPrograms());
  for(const {program:p,issues} of d.autoReview.entries){
   assert.deepEqual(validateProgram(p),[]);
   assert.ok(!issues.some(i=>i.kind==='blocking'));
@@ -194,11 +212,11 @@ test('published conditional tuition retains every fee, allows overall confirmati
  assert.equal(matchProgram({budget:899999},numeric,numeric.rounds[0]).preferences[0].state,'fail');
  assert.equal(matchProgram({budget:900000},numeric,numeric.rounds[0]).preferences[0].state,'pass');
  d.autoReview.validationVersion=2;d.autoReview.entries.forEach(entry=>entry.issues.push({path:'/coverage',reason:'已公布学费需金额、币种和周期，请补充核对意见后重新整理',kind:'blocking'}));
- const prior=JSON.stringify(d);const refreshed=refreshReviewValidation(d,store.getPrograms());assert.equal(JSON.stringify(d),prior);
+ const prior=JSON.stringify(d);const refreshed=refreshReviewValidation(d,await store.getPrograms());assert.equal(JSON.stringify(d),prior);
  assert.ok(refreshed.entries.every(entry=>!entry.issues.some(i=>i.kind==='blocking')));
  assert.equal(refreshed.entries[0].program.tuition.detail,tuition.detail);
- d.autoReview=refreshed;store.saveDocument(d);
- const student=JSON.stringify(store.getStudent('retained'));
- assert.equal(confirmDocument(d.id,{expectedReviewVersion:refreshed.version,confirmed:true},'test').programs.length,2);
- assert.equal(JSON.stringify(store.getStudent('retained')),student);
+ d.autoReview=refreshed;await store.saveDocument(d);
+ const student=JSON.stringify(await store.getStudent('retained'));
+ assert.equal((await confirmDocument(d.id,{expectedReviewVersion:refreshed.version,confirmed:true},'test')).programs.length,2);
+ assert.equal(JSON.stringify(await store.getStudent('retained')),student);
 });
