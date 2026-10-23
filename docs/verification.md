@@ -1,6 +1,15 @@
 # 验证记录
 
-## 最新一轮：教育经历继续归并与单行备注
+## 最新一轮：Railway HTTPS提交误拦截
+
+日期：2026-10-24（北京时间）。原线上空注册表单带`Origin: https://sgu.up.railway.app`返回403“不可跨站”，同域HTTP来源却能进入400表单校验，确认是协议识别错误，未创建正式账号。
+
+- 新增`lib/request-origin.mjs`，优先采用显式`APP_ORIGIN`，其次采用Railway服务端公共域名的HTTPS地址；无代理配置时保留本机HTTP／直接TLS行为。来源配置校验严格，拒绝通配、带身份信息或页面路径的配置，不采信客户端转发头。
+- 注册和登录使用相同来源判断，HTTPS会话自动设置Secure；原JSON标识、跨站阻断及CSRF验证保留。
+- 新增`tests/request-origin.test.mjs`，隔离数据库验证管理员创建、登录、会话操作、错误CSRF、其他域名、HTTP降级、仿冒子域名及转发头；现有API回归改为携带真实本机Origin。全量132项通过，语法／资源／PowerShell BOM及差异格式检查通过。
+- 线上验收使用空注册表单：同源应进入400字段校验，外站及HTTP来源应仍返回403；不在正式站创建测试账号或学生数据。
+
+## 历史验证：教育经历继续归并与单行备注
 
 日期：2026-10-23（北京时间）。修改 `public/education-model.js`、`public/qualification-matrix.js`、`public/education.css`、`tests/education.test.mjs` 及交接文档。
 

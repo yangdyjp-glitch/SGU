@@ -7,11 +7,11 @@ import { randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 const base='http://127.0.0.1:3222';
 test('authenticated team workflow, version history, conflicts and ingestion',async t=>{
- const child=spawn(process.execPath,['server.mjs'],{env:{...process.env,PORT:'3222',HOST:'127.0.0.1',DATA_DIR:'.qa/test-'+randomUUID(),MINERU_BIN:'',OPENAI_API_KEY:''},stdio:['ignore','pipe','pipe'],windowsHide:true});
+ const child=spawn(process.execPath,['server.mjs'],{env:{...process.env,PORT:'3222',HOST:'127.0.0.1',DATA_DIR:'.qa/test-'+randomUUID(),MINERU_BIN:'',OPENAI_API_KEY:'',APP_ORIGIN:'',RAILWAY_PUBLIC_DOMAIN:'',COOKIE_SECURE:''},stdio:['ignore','pipe','pipe'],windowsHide:true});
  t.after(async()=>{child.kill();await once(child,'exit').catch(()=>{});});
  await Promise.race([once(child.stdout,'data'),once(child,'exit').then(()=>{throw new Error('server exited early');})]);
  let cookie='',csrf='';
- async function req(path,body,extra={}){const res=await fetch(base+'/api'+path,{method:body?'POST':'GET',headers:{'Content-Type':'application/json','X-SGU-Request':'1','X-CSRF-Token':csrf,Cookie:cookie,...extra},...(body?{body:JSON.stringify(body)}:{})});return {status:res.status,headers:res.headers,body:await res.json()};}
+ async function req(path,body,extra={}){const res=await fetch(base+'/api'+path,{method:body?'POST':'GET',headers:{'Content-Type':'application/json','X-SGU-Request':'1','X-CSRF-Token':csrf,Cookie:cookie,Origin:base,...extra},...(body?{body:JSON.stringify(body)}:{})});return {status:res.status,headers:res.headers,body:await res.json()};}
  await t.test('no anonymous access',async()=>{assert.equal((await req('/bootstrap')).status,401);assert.equal((await fetch(base+'/sources/aohb27.pdf')).status,401);});
  await t.test('first account needs no name and becomes administrator',async()=>{const r=await req('/auth/register',{login:'reviewer',password:'Review26'});assert.equal(r.status,201);assert.equal(r.body.user.login,'reviewer');assert.equal(r.body.user.role,'admin');assert.equal(r.body.user.name,undefined);cookie=r.headers.get('set-cookie').split(';')[0];csrf=r.body.csrf;assert.match(r.headers.get('set-cookie'),/HttpOnly/);assert.equal((await req('/bootstrap')).body.programs.length,5);});
  await t.test('account-only login accepts eight-character password and rejects wrong credentials',async()=>{assert.equal((await req('/auth/login',{login:'reviewer',password:'Wrong123'})).status,401);const r=await req('/auth/login',{login:'REVIEWER',password:'Review26'});assert.equal(r.status,200);assert.equal(r.body.user.role,'admin');assert.equal(r.body.user.name,undefined);assert.equal((await req('/auth/register',{login:'shortpass',password:'short12'})).status,400);});

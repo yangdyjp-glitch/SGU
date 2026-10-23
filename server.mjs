@@ -14,6 +14,8 @@ import { openAIStatus, saveOpenAIConfig, checkOpenAIConnection } from './lib/ope
 import { documentWorkflow } from './lib/document-workflow.mjs';
 import { confirmDocument } from './lib/document-publish.mjs';
 import { configureNetwork } from './lib/network.mjs';
+import { createRequestOrigin } from './lib/request-origin.mjs';
+const expectedOrigin=createRequestOrigin();
 const root=resolve('public');const port=Number(process.env.PORT||3210),host=process.env.HOST||'127.0.0.1';
 const mime={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.pdf':'application/pdf','.txt':'text/plain; charset=utf-8','.md':'text/plain; charset=utf-8'};
 const fail=(message,status=400,extra={})=>{throw Object.assign(new Error(message),{status,...extra});};
@@ -31,16 +33,16 @@ const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url,'http://localhost');const path=url.pathname;const token=(req.headers.cookie||'').split(';').map(s=>s.trim()).find(s=>s.startsWith('sgu_session='))?.slice(12);const user=sessionUser(token);const actor=user?.login||'';
   if(path.startsWith('/api/')){
    const isWrite=!['GET','HEAD'].includes(req.method);
-   if(isWrite){if(!String(req.headers['content-type']).startsWith('application/json')||req.headers['x-sgu-request']!=='1')fail('无效请求来源',403);const expected=process.env.APP_ORIGIN||`http://${req.headers.host}`;if(req.headers.origin&&req.headers.origin!==expected)fail('不允许跨站请求',403);if(user&&!path.startsWith('/api/auth/')&&req.headers['x-csrf-token']!==user.csrf)fail('会话验证失败，请刷新页面',403);}
+   if(isWrite){if(!String(req.headers['content-type']).startsWith('application/json')||req.headers['x-sgu-request']!=='1')fail('无效请求来源',403);if(req.headers.origin&&req.headers.origin!==expectedOrigin(req))fail('不允许跨站请求',403);if(user&&!path.startsWith('/api/auth/')&&req.headers['x-csrf-token']!==user.csrf)fail('会话验证失败，请刷新页面',403);}
    const body=isWrite?await readBody(req):null;
    if(path==='/api/auth/state'&&req.method==='GET')return send(res,200,{setup:userCount()===0,user:user?safeUser(user):null,csrf:user?.csrf});
    if(path==='/api/auth/register'&&req.method==='POST'){
     rateLimit(req);if(typeof body.login!=='string'||!/^[a-zA-Z0-9_.@-]{3,80}$/.test(body.login)||typeof body.password!=='string'||body.password.length<8||body.password.length>200)fail('请填写有效账号和至少8位密码');
     const created=transaction(()=>{const first=userCount()===0;if(!first&&body.invite!==db.prepare("SELECT value FROM meta WHERE key='invite'").get().value)fail('团队邀请码不正确',403);const u={id:randomUUID(),login:body.login.toLowerCase(),role:first?'admin':'member'};if(db.prepare('SELECT id FROM users WHERE login=?').get(u.login))fail('账号已存在');db.prepare('INSERT INTO users(id,name,login,password,created_at,role) VALUES(?,?,?,?,?,?)').run(u.id,u.login,u.login,passwordHash(body.password),now(),u.role);event('account',u.login,u.login,{action:first?'创建管理员账号':'加入团队',role:u.role});return u;});
-    const sess=newSession(created.id);return send(res,201,{user:created,csrf:sess.csrf},{'Set-Cookie':`sgu_session=${sess.token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=604800${process.env.COOKIE_SECURE==='true'?'; Secure':''}`});
+    const sess=newSession(created.id);return send(res,201,{user:created,csrf:sess.csrf},{'Set-Cookie':`sgu_session=${sess.token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=604800${process.env.COOKIE_SECURE==='true'||expectedOrigin(req)?.startsWith('https://')?'; Secure':''}`});
    }
    if(path==='/api/auth/login'&&req.method==='POST'){
-    rateLimit(req);const u=db.prepare('SELECT * FROM users WHERE login=?').get(String(body.login||'').toLowerCase());if(!u||!passwordVerify(String(body.password||''),u.password))fail('账号或密码不正确',401);const sess=newSession(u.id);return send(res,200,{user:safeUser(u),csrf:sess.csrf},{'Set-Cookie':`sgu_session=${sess.token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=604800${process.env.COOKIE_SECURE==='true'?'; Secure':''}`});
+    rateLimit(req);const u=db.prepare('SELECT * FROM users WHERE login=?').get(String(body.login||'').toLowerCase());if(!u||!passwordVerify(String(body.password||''),u.password))fail('账号或密码不正确',401);const sess=newSession(u.id);return send(res,200,{user:safeUser(u),csrf:sess.csrf},{'Set-Cookie':`sgu_session=${sess.token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=604800${process.env.COOKIE_SECURE==='true'||expectedOrigin(req)?.startsWith('https://')?'; Secure':''}`});
    }
    if(!user)fail('请先登录',401);
    if(path==='/api/auth/logout'&&req.method==='POST'){db.prepare('DELETE FROM sessions WHERE token=?').run(hashToken(token));return send(res,200,{ok:true},{'Set-Cookie':'sgu_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0'});}

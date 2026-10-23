@@ -116,7 +116,9 @@ MINERU_BIN_DIR=D:/AI-Yang.cn/tools/mineru/bin
 
 线上工作台已部署到 **https://sgu.up.railway.app/**。后续修改统一采用“本地修改与验证 → 推送`main` → 检查Railway部署成功 → 检查线上功能”的流程；用户已授权常规更新直接上线。发布目标见 [AGENTS.md](AGENTS.md)。本地与线上保留各自数据库、上传资料及密钥，代码发布不覆盖现有业务数据。
 
-独立部署时，应设置`APP_ORIGIN`与`COOKIE_SECURE=true`，通过HTTPS提供服务。开发默认只绑定`127.0.0.1`，项目还提供Dockerfile及compose示例：
+Railway部署未设置`APP_ORIGIN`时，程序使用平台提供的`RAILWAY_PUBLIC_DOMAIN`识别正式HTTPS地址，避免将正常提交误判为跨站请求（[平台变量说明](https://docs.railway.com/variables/reference)）。独立反向代理或其他自定义域名应将`APP_ORIGIN`设为实际访问地址，例如`https://school.example`；不包含页面路径。HTTPS会话自动设置Secure Cookie，仍保留来源、JSON请求标识和CSRF校验。开发默认使用本机HTTP地址，不信任客户端传入的转发头。
+
+项目还提供Dockerfile及compose示例：
 
 ```sh
 docker compose up -d --build
