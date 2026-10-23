@@ -1,4 +1,4 @@
-$sguPidFile = Join-Path $PSScriptRoot '.data/server-process.json'
+﻿$sguPidFile = Join-Path $PSScriptRoot '.data/server-process.json'
 if (-not (Test-Path -LiteralPath $sguPidFile)) { Write-Output '没有此启动脚本记录的服务进程。'; exit 0 }
 $sguRecord = Get-Content -LiteralPath $sguPidFile | ConvertFrom-Json
 $sguProcessId = [int]$sguRecord.pid

@@ -1,6 +1,8 @@
 .env
 .data/
 .qa/
+/blobs/
+/.mineru-service.lock
 node_modules/
 *.log
 *.db

@@ -1,0 +1,36 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
+import { once } from 'node:events';
+import { randomUUID } from 'node:crypto';
+import { setTimeout as delay } from 'node:timers/promises';
+import { admissionsText } from './fixtures/admissions.mjs';
+
+test('upload → automatic organization → overall confirmation, configuration privacy and stale review protection',async t=>{
+ const child=spawn(process.execPath,['--import','./tests/fixtures/openai-fetch.mjs','server.mjs'],{env:{...process.env,PORT:'3224',HOST:'127.0.0.1',DATA_DIR:'.qa/auto-api-'+randomUUID(),MINERU_BIN:'',OPENAI_API_KEY:''},stdio:['ignore','pipe','pipe'],windowsHide:true});
+ t.after(async()=>{child.kill();await once(child,'exit').catch(()=>{});});
+ await Promise.race([once(child.stdout,'data'),once(child,'exit').then(()=>{throw new Error('server exited early');})]);
+ let cookie='',csrf='';const base='http://127.0.0.1:3224';
+ async function req(path,body){const res=await fetch(base+'/api'+path,{method:body?'POST':'GET',headers:{'Content-Type':'application/json','X-SGU-Request':'1','X-CSRF-Token':csrf,Cookie:cookie},...(body?{body:JSON.stringify(body)}:{})});return {status:res.status,headers:res.headers,body:await res.json()};}
+ const registration=await req('/auth/register',{login:'reviewer',password:'AutoTest26'});cookie=registration.headers.get('set-cookie').split(';')[0];csrf=registration.body.csrf;
+ const waitFor=async(id,status)=>{for(let i=0;i<100;i++){const d=(await req('/documents/'+id)).body;if(d.status===status)return d;if(d.status==='error'&&status!=='error')throw new Error(d.error);await delay(20);}throw new Error('timeout waiting for '+status);};
+ const student=(await req('/students',{student:{id:'preserved',name:'完整保留的学生',notes:'不可被上传文档清空'}})).body;
+ const upload=(await req('/documents',{filename:'example.md',base64:Buffer.from(admissionsText).toString('base64')})).body;assert.equal(upload.status,'queued');
+ await waitFor(upload.id,'needs_configuration');assert.equal((await req('/bootstrap')).body.programs.length,5);
+ const secret='sk-qa-key-only-never-real';const settings=await req('/openai',{apiKey:secret,model:'gpt-6.1-sol'});assert.equal(settings.status,200);assert.deepEqual(settings.body,{configured:true,model:'gpt-6.1-sol'});
+ assert.equal((await req('/openai/check',{})).body.connected,true);
+ let review=await waitFor(upload.id,'review');assert.equal(review.autoReview.entries.length,2);assert.equal(review.autoReview.version,1);assert.equal((await req('/bootstrap')).body.programs.length,5);
+ const list=(await req('/documents')).body.find(d=>d.id===upload.id);assert.equal(list.status,review.status);assert.equal(list.statusVersion,review.statusVersion);assert.equal(list.autoReview,undefined);assert.equal(list.hasReview,true);
+ assert.equal((await req('/documents/'+upload.id+'/confirm',{expectedReviewVersion:0,confirmed:true})).status,409);
+ const correction=await req('/documents/'+upload.id+'/parse',{feedback:'最低分改为7',expectedReviewVersion:1});assert.equal(correction.status,202);
+ review=await waitFor(upload.id,'review');assert.equal(review.autoReview.version,2);assert.equal(review.autoReview.entries[0].program.language[0].score,7);
+ assert.equal((await req('/documents/'+upload.id+'/confirm',{expectedReviewVersion:1,confirmed:true})).status,409);
+ const published=await req('/documents/'+upload.id+'/confirm',{expectedReviewVersion:2,confirmed:true});assert.equal(published.status,200);assert.equal(published.body.programs.length,2);assert.equal(published.body.document.status,'published');
+ assert.equal((await req('/documents/'+upload.id+'/confirm',{expectedReviewVersion:2,confirmed:true})).body.alreadyPublished,true);
+ const bootstrap=(await req('/bootstrap')).body;assert.equal(bootstrap.programs.length,7);assert.equal(bootstrap.students[0].revision,student.revision);assert.equal(bootstrap.students[0].notes,student.notes);assert.ok(bootstrap.programs.filter(p=>!p.id.startsWith('AI-')).every(p=>p.version===1));
+ assert.doesNotMatch(JSON.stringify([(await req('/openai')).body,bootstrap,(await req('/events')).body,(await req('/export')).body]),new RegExp(secret));
+ const team=(await req('/team')).body;const member=await req('/auth/register',{login:'member',password:'Member26',invite:team.invite});cookie=member.headers.get('set-cookie').split(';')[0];csrf=member.body.csrf;
+ assert.equal((await req('/openai',{apiKey:'sk-should-not-replace',model:'gpt-6.1-sol'})).status,403);
+ const failure=(await req('/documents',{filename:'failure.txt',base64:Buffer.from(admissionsText+'\nTEST_MODEL_ERROR').toString('base64')})).body;
+ const failed=await waitFor(failure.id,'error');assert.match(failed.error,/额度/);assert.ok(failed.text.length);assert.equal((await req('/documents')).body.find(d=>d.id===failure.id).status,'error');assert.equal((await req('/bootstrap')).body.programs.length,7);
+});

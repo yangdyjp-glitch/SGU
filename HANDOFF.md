@@ -1,25 +1,42 @@
 # SGU 选校网站开发交接
 
-更新日期：2026-10-21（北京时间）  
+更新日期：2026-10-23（北京时间）
 用途：在另一台电脑、另一段 Codex 会话中接续修改现有项目。
 
 ## 0. 最新有效状态：先读本节
 
-**网站已经完成首版开发及两轮修改，可以在本地运行；代码已同步到 GitHub。接续时应修改现有代码。**
+**已直接更新 `D:\AI-Yang.cn\SGU`：所有学校及项目（含编入）共用三类、26项原始学历资格目录；教育经历13项归并显示为4行，整个矩阵共17行。高中教育与指定预备教育合并展示，MEXT等同／指定课程合并展示，各成员仍分别判定。六种学校认证合为“认证机构”，额外机构独立列出。资格表显示“可／N项可／否／待核”，备注为单行摘要，超长省略并由行尾“!”展开完整说明。名称后的“!”及状态按钮也保留逐项结论表。学生支持多资格、多认证；一般入学资格与项目资格分别判定，原始名称、成立条件、学生档案和规则历史均保留。文档仍按“上传文件 → 核对高亮疑点 → 整体确认入库”处理，OpenAI已接通。**
 
 | 项目 | 当前状态 |
 | --- | --- |
 | 仓库 | https://github.com/yangdyjp-glitch/SGU.git |
 | 主分支 | `main` |
-| 本交接编写时的功能代码基线 | `d4a869e6e1a1240a3efe4e50bc22427510c29530` |
-| 本交接的提交 | 本文件作为后续文档提交加入 `main`；接续时拉取最新 `main` 即可 |
-| 当前电脑代码目录 | `C:\Users\Administrator\Documents\ChatGPT\SGUREAD\sgu` |
+| 本轮开始时的基线 | `7e2b3d69768e04fa6632a08746fe9926db5f35d3`（PowerShell BOM修复） |
+| 当前功能 | 文档自动识别学校、年份、项目与完整规则，疑点高亮，一次确认全部项目；统一资格目录、逐项资格结论和紧凑学校／项目展示 |
+| 当前电脑代码目录 | `D:\AI-Yang.cn\SGU` |
 | 默认本地地址 | http://127.0.0.1:3210/ |
 | 技术栈 | Node.js 24.15+、原生 HTTP、原生 SQLite、浏览器 ES 模块和 CSS |
 | 初始招生范围 | 立命馆大学 2027 AO 英语本科：GLA、JDP、GS、CRPS、ISSE |
 | 已收录数据 | 23 页手册、135 条来源分析记录、28 条语言考试／版本门槛、11 组申请轮次 |
-| 验证状态 | 上一轮 `npm run check` 与 41 项自动测试通过；五项目及桌面、手机布局已检查 |
-| 部署状态 | 已在当前电脑运行并同步源码；未部署公网服务，GitHub 仓库不等于在线运行的网站 |
+| 验证状态 | Windows / Node 24.15：上传前全量128项测试及语法／资源／脚本BOM检查通过；14项目字段及顺序一致，原路径无遗漏；隔离浏览器验证1280／1920px主表、FLA项目列宽、旧名称搜索、完整说明及390px窄屏，正式库摘要不变 |
+| 部署状态 | 本地3210服务已重启并通过健康检查；14个项目、16个历史版本及学生相关数据与修改前摘要一致。刷新页面即可使用；未部署公网服务 |
+
+### 文档自动整理：接续时先看
+
+- 用户只做上传、核对疑点、整体确认三个步骤，不逐条勾选、不先手动选择他校项目。管理员在“团队设置 → 文档自动整理 · OpenAI”配置一次密钥。
+- 密钥只存在本机 `.data/openai.json` 或环境变量中；不要读出到聊天、日志、截图、导出或Git。当前模型 `gpt-6.1-sol`，官方 Responses 接口已真实联调。
+- 解析、整理、完成、失败均由同一状态及递增版本驱动列表和详情。串行队列可从持久化状态恢复；已有提取文字会复用，短暂模型连接失败自动重试一次。
+- 正式上智、早稻田、广岛、立教及东北大文件已由用户确认入库（上智2个项目、立教3个、东北大2个，其余各1个）。分档学费校验已修复。不得替用户点击正式资料的整体确认。
+- 旧人工空壳草稿自动归档为 `previousManualDraft` 后继续整理，已有实质手工规则不覆盖。校验升级只重查未确认草稿，旧结果保留为 `previousAutoReview`，无需重跑付费模型。
+- Windows系统代理只供本Node进程沿用，回环地址直连；不修改系统代理设置。长文档使用流式接收，必须收到完整结束事件后才能形成草稿，断流不接受半份结果。
+- 自动导入项目有 `semanticVersion:1`，正式展示经 `imported-requirement-model.js` 适配到共用学校／项目模板；`admissions-content.js` 仅供草稿核对。缺失日期、门槛和无法自动表达的资格保留待核实，不继承立命馆规则。有效期基准必须来自该文件，TOEFL禁止形式按考试范围处理。
+- 资格目录由 `education-model.js` 提供共同基础，并汇总所有当前项目的独立资格路径；学校、项目及编入均显示相同字段。共享教育事实映射至已有档案，其他 `verification.*` 仍是本项目路径内的条件，按当前学生资料、项目和版本核对，不能借用其他学校的确认。完整招生条款和原文继续保留。
+- 最新要求：上智FLA按“FLA 申请”“FLA 编入”两个独立项目展示，不再计作一个项目的两个通道。学校页同时列出两项目、共享矩阵的独立列、各自轮次与材料范围，并支持同时勾选比较；索引、查询、匹配、候选和维护入口使用同一显示名称。保留原有两条ID及原文通道元数据，以便后续文档匹配更新及历史快照追溯，不合并底层条件。
+- 材料说明使用实际学制／认证／文凭名称，不再要求顾问对照A–I字母路径。毕业、IB／A-Level、预备课程、同等学力和日本高卒认定证明均已替换旧称；匹配结果和普通编辑标题也显示资格名称。原始来源、内部条件ID及JDP例外保留，未改写已入库规则。
+- 认证去重按每个项目的具体条件组合处理：已由认证行完整表达的十二年课程不再进入汇总行。同一项目的独立“日本以外12年正规学校教育”保留并使用实际名称，来源和截止日随各自资格保留，不能因存在六种认证就删除独立学历要求。
+- 立教DSE原已保存在完整条款r7，遗漏发生在资格表只读paths。现也读取有原文依据、明确命名资格的申请阶段硬性／附条件条款，保留全部分数、年份、英语和所在地条件；不把这些条款新增为匹配引擎的OR路径。附带提及、排除、不确定与入学后条款不会授予“可”。
+- 已公布但没有单一金额的学费允许保留完整收费说明和原文依据；校验v3改为黄色核对提示，不强迫选一档费用。预算匹配遇空金额一律待核实，学校、项目、对比与问答统一显示完整说明。缺币种、周期、依据或负金额仍阻挡入库。东北大旧autoReview已备份且规则内容未改变，无新模型调用。
+- 用户最终确认以事务写入同一文档的全部项目、版本和记录；旧草稿版本或期间被修改的项目返回冲突，重复确认幂等。
 
 ### 需求优先级与旧文档的含义
 
@@ -30,7 +47,7 @@
 
 原始交接保留了当时的“先不要制作网页”“技术栈未确定”“尚未创建代码”等记录。用户后来已明确要求开始开发、上传上述 Git 仓库，并连续提出账号和界面修改。这些旧的阶段描述已经失效；不能据此把项目退回需求讨论阶段或重新搭建另一套网站。
 
-当前用户的请求是生成交接文件。本轮只整理文档，未新增业务功能；下一步根据用户的新修改要求继续。
+交接文件创建后，用户继续排查 Windows 本地启动与登录自启动问题。`npm.cmd start` 已由用户确认可用；后台启动发现 Windows PowerShell 读取无 BOM 的中文脚本时出现乱码和字符串终止符解析错误。当前修复为 `start.ps1`、`stop.ps1` 保存 UTF-8 BOM，并通过 `.editorconfig` 保持编码；不改业务逻辑或数据库。用户电脑上的修复后启动与重新登录自启仍须实际验证。
 
 ## 0A. 用户最新确认的界面与账号要求
 
@@ -41,19 +58,27 @@
 | 员工登录 | 只需要账号和密码，不要求姓名；首个账号为管理员。这里指员工账户，学生档案仍保留学生姓名字段 |
 | 当前管理员 | 原电脑已创建账号 `admin`；真实密码不写入源码或本交接，数据库只保存密码哈希 |
 | 原文链接 | 在“原文与版本”设置“显示详细原文链接”开关，刷新页面默认关闭；开启后显示各条详细来源。完整 PDF 入口一直保留 |
-| 学历路径布局 | 采用双列紧凑表格；最后一条可跨列，避免大块空白；保留各路径的附加条件与例外 |
-| 路径 B | 必须完整显示 **`(WASC, NEASC, Cognia, COBIS, CIS or ACSI)`**，不能缩写成“指定认证机构” |
+| 学生档案 | 2026-10-22最新要求：保留全部现有档案、匹配记录和操作历史，不再清空。更新脚本已取消清理步骤；新库仍不自动生成测试档案 |
+| 学校与项目层级 | 首屏只列学校入口；学校总览列项目入口，并归并学历、语言、材料、轮次和后续要求，明确适用项目；特殊条件单独展示 |
+| 资格展示 | 三个并行分类：学历与教育经历、课程体系与毕业资格、学校认证与其他资格。所有学校及项目共用字段和顺序；绿色“可／N项可”标明可用类型数，暗红“否”只表示明确不接受本项，黄色“待核”表示原文未明确或有冲突。备注直接列具体类型，名称后的“!”和状态按钮可悬停／点击查看逐项结论、完整条件及依据 |
+| 资格目录扩展 | 共用原始名称→标准类型→附加条件映射，现有14项目均为26项；新独立资格进入共同目录，不能只在一个学校生成私有字段；其他项目核实条件不冒充新的资格 |
+| OSSD／DSE | 未列明接受范围时显示“待核”，仅明确排除时显示“否”；不自动否决持有人通过十二年课程等其他完整路径申请 |
+| 申请轮次布局 | 每个项目轮次一行；入学节点、申请期间、初筛、面试、最终结果各自成列，条件性结果说明用ⓘ保留 |
+| 国际学校认证 | WASC、NEASC、Cognia、COBIS、CIS、ACSI归为一个“认证机构”字段；六种以外的机构单列。部分认可须高亮列明范围，后台逐机构检查实际学校、课程、认证范围、年限及完成状态，不因归组而扩大认可 |
+| 附加条件与背景 | 附加条件以原字号单行显示，超长省略并通过行尾“!”查看完整说明；十一年课程的国家举例和个别审查补充背景收进提示。年龄、个别审查期限与JDP豁免指定国家范围保持完整 |
 | 默认人群 | 中国籍学生或具有日本国籍的华裔。隐藏与该人群无关的国籍专属信息；中国／日本学生在其他国家或教育体系就读的有效路径仍须保留 |
 | 资格组合 | 删除没有信息量的“资格组合”说明块。保留真正的“多项目并申／跨轮申请”规则，两者不同 |
 | 资格取得节点 | 合并到“申请轮次”，显示对应入学节点，不在学历区重复列截止点 |
 | 个别审查 | 不另设泛化的咨询期限大栏；具有实际约束的特殊要求跟随适用路径显示。目前路径 I 保留申请期开始前 3 周联系的要求 |
-| 英语教育豁免 | 条件和证明范围集中于语言区，只显示一次；六年英语教育不能在学历、语言和材料区重复铺陈 |
+| 英语教育豁免 | 语言区只显示名称、ⓘ和适用项目；完整条件和证明范围在悬停／聚焦提示中展示，点击可打开完整说明，不在其他区重复铺陈 |
 | 申请材料 | 主页面只列材料名称与说明标识。鼠标停留、键盘聚焦可查看提示；点击／手机触摸可打开完整说明 |
 | 筛选方式 | 放到申请轮次区域，与初筛、面试、结果日期一起查看 |
-| 后续阶段要求 | 仅有实际内容时显示栏目及导航。GLA、JDP、GS有相关内容；CRPS、ISSE目前没有，不显示空栏 |
+| 后续阶段要求 | 仅有实际内容时显示栏目及导航。学校总览的标题、说明和适用项目统一列宽对齐；长标题在列内换行，TOEFL ITP标题仍为一行。GLA、JDP、GS有相关内容；CRPS、ISSE目前没有，不显示空栏 |
 | 成绩展示 | 保留总分、指定科目、单项、量表、考试日期分界、有效期、豁免和不接受的形式；区分“未注明”和“不适用” |
+| 成绩表行高 | 每条考试要求仅一行，名称及最低分列按完整内容分配必要宽度，禁止固定窄列造成长名称越界；量表、日期及精简说明放最右侧“备注”列；最低分用“≥ 72（总分）”格式，SAT／ACT单项和TOEIC听读合计使用真实口径。学校、项目及文档核对共用渲染，默认行高约29px，窄屏表格内部横向滚动 |
+| 长文字边界 | 长标题、文件名及连续英文在自身列内换行；网格和弹窗标题可收缩，关闭按钮和疑点数量标签不被挤窄；手机提示按钮不使用向外负边距。完整备注和资格说明保留，不能靠隐藏关键条件消除重叠 |
 
-展示精简不等于删除底层资格规则。默认人群之外的已有规则仍保存在判定引擎中。
+展示精简不等于删除底层资格规则。默认人群之外的已有规则仍保存在判定引擎中。学校总览只覆盖已收录项目、所选年度与通道，不凭空计算录取概率。共同条件只有内容与门槛完全相同时才合并；总分、单项、版本或适用条件不同会拆行。
 
 ## 1. 在新电脑恢复开发
 
@@ -65,12 +90,12 @@
 git clone https://github.com/yangdyjp-glitch/SGU.git
 cd SGU
 node --version
-npm run check
-npm test
-npm start
+npm.cmd run check
+npm.cmd test
+npm.cmd start
 ```
 
-浏览器打开 http://127.0.0.1:3210/ 。`npm start` 在当前终端运行，停止时使用 Ctrl+C。
+浏览器打开 http://127.0.0.1:3210/ 。`npm.cmd start` 在当前终端运行，停止时使用 Ctrl+C。Windows 使用 `npm.cmd` 可避开 `npm.ps1` 的执行策略报错；其他系统仍使用 `npm`。
 
 如果新电脑已有本仓库，先确认并保留自己的未提交修改，再更新：
 
@@ -79,7 +104,55 @@ git status --short --branch
 git pull --ff-only origin main
 ```
 
-Windows 也可以使用 `start.ps1` 后台启动并打开网页，使用 `stop.ps1` 停止该脚本记录的 SGU 进程。脚本被系统执行策略限制时，可直接使用 `npm start`。`start.ps1` 按默认 3210 端口工作；修改端口后优先用终端启动并访问实际端口。
+Windows 后台启动，在项目目录运行：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\start.ps1
+```
+
+确认网站可访问后可关闭终端。停止时运行 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\stop.ps1`，只停止该脚本记录的 SGU 进程。执行策略参数只对该 PowerShell 进程生效。`start.ps1` 按默认 3210 端口工作；修改端口后优先用终端启动并访问实际端口。
+
+### 本机更新（保留学生档案）
+
+当前工作目录为 `D:\AI-Yang.cn\SGU`。页面文件无需构建，刷新即可读取新内容；需要重启后台服务时执行：
+
+```powershell
+cd "D:\AI-Yang.cn\SGU"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\apply-school-update.ps1
+```
+
+脚本依次停止该启动脚本登记的SGU进程，确认默认端口没有仍运行的服务，重新后台启动并检查HTTP。学生档案、匹配记录、操作历史、账号、招生规则、历史版本、上传资料和 `.env` 均保留。
+
+此前“清空全部学生”的要求已被2026-10-22指令撤销，不再作为更新或验收步骤执行。历史清理工具仍保留在源码中，但更新、启动与正常运行均不调用。新工作空间只初始化招生规则，学生数为0。
+
+若旧服务在前台 `npm.cmd start` 终端运行，先用Ctrl+C停止；脚本不会任意结束其他Node进程。自定义端口部署按原方式停服与启动。
+
+### Windows PowerShell 编码故障（2026-10-21）
+
+用户报告 `start.ps1:15` 中文变为乱码，并出现“字符串缺少终止符”，脚本在解析阶段失败，尚未执行 Node 启动。因此 Node 错误日志可能为空。原脚本为 UTF-8 无 BOM；当时两份启动／停止 `.ps1` 已补上 UTF-8 BOM；本轮新增更新脚本也使用该编码，脚本文本和启动逻辑保持原样。`.editorconfig` 对 `*.ps1` 指定 `charset = utf-8-bom`，后续编辑须保留。
+
+验证范围：已核对修复后的文件字节为 `EF BB BF` 开头，去掉 BOM 后与原脚本完全一致。当前修复环境为 Linux，不能据此声称已经验证 Windows PowerShell 5.1 启动；需在用户 Windows 上运行脚本、关闭启动终端后访问网页，并验证下次登录自动启动。
+
+### 登录 Windows 后自动后台启动
+
+用户此前已经在当前 Windows 账号的启动文件夹创建 `SGU.lnk`。快捷方式调用 `powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "<项目目录>\start.ps1"`，工作目录指向项目目录。上述编码错误会使该隐藏进程退出；修复脚本后可复用该快捷方式。快捷方式创建成功不等于服务已经启动成功。
+
+新电脑或新的 Windows 账号需重新配置。先确认手动后台启动成功，再在 PowerShell 中一次性执行以下命令；`$sguRoot` 改为实际项目路径：
+
+```powershell
+$sguRoot = 'C:\Users\Administrator\Documents\ChatGPT\SGUREAD\sgu'
+$sguScript = Join-Path $sguRoot 'start.ps1'
+if (-not (Test-Path -LiteralPath $sguScript)) { throw 'SGU start.ps1 not found.' }
+$sguLink = Join-Path ([Environment]::GetFolderPath('Startup')) 'SGU.lnk'
+$sguShortcut = (New-Object -ComObject WScript.Shell).CreateShortcut($sguLink)
+$sguShortcut.TargetPath = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
+$sguShortcut.Arguments = '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "' + $sguScript + '"'
+$sguShortcut.WorkingDirectory = $sguRoot
+$sguShortcut.Save()
+Start-Process -FilePath $sguLink
+```
+
+这只配置当前用户登录后的启动，不是 Windows 系统服务；不提供异常退出后自动重启，也不保证关机或休眠期间可访问。取消时用 Win+R 打开 `shell:startup`，删除 `SGU.lnk`。发生错误时，去掉 `-WindowStyle Hidden` 在可见终端运行同一脚本，记录实际错误并查看 `.data/server-error.log`，不要仅凭快捷方式执行无报错判断服务健康。
 
 `.env` 是可选的，缺少时可以直接运行。需要个性化配置时，以 `.env.example` 为模板，按新电脑实际路径和服务地址填写。
 
@@ -98,6 +171,7 @@ Windows 也可以使用 `start.ps1` 后台启动并打开网页，使用 `stop.p
 | 源码、初始招生数据、词库、原始 PDF、测试、文档 | 是 | 拉取最新 `main` |
 | `.data/sgu.db` | 否 | 包含账号、学生、当前规则、版本、匹配历史和操作记录；随完整数据目录迁移 |
 | `.data/uploads/` | 否 | 原始上传文件与提取结果；与数据库一起迁移 |
+| `.data/openai.json` | 否 | 管理员保存的OpenAI密钥和模型配置；按凭据处理，不发到聊天或Git |
 | `.env` | 否 | 按新电脑的实际路径重建；外部模型密钥单独配置 |
 | MinerU 可执行文件、模型、缓存和服务 | 否 | 新电脑单独安装／配置；不会因克隆本仓库而自动安装 |
 | `.qa/` | 否 | 测试与临时检查文件，不作为业务数据迁移 |
@@ -118,7 +192,15 @@ Git 提交和推送不会带走 `.data`，也不会把正在运行的数据库�
 
 | 文件 | 修改什么时优先阅读 |
 | --- | --- |
-| [public/project-detail.js](public/project-detail.js) | 最新项目详情：路径说明、豁免归并、材料清单与提示、成绩表、轮次及条件性后续栏 |
+| [public/school-detail.js](public/school-detail.js) | 学校聚合、年度／通道隔离、共同要求与项目适用范围 |
+| [public/qualification-matrix.js](public/qualification-matrix.js) | 通用资格目录、规则映射、可否矩阵及完整附加条件 |
+| [public/requirement-model.js](public/requirement-model.js) | 共用展示模型：完整资格说明、豁免归并、材料细则与特殊条款 |
+| [public/rounds-table.js](public/rounds-table.js) | 学校和项目复用的紧凑轮次表 |
+| [public/project-detail.js](public/project-detail.js) | 项目详情及材料悬停／完整说明弹窗 |
+| [public/school.css](public/school.css) | 学校总览、资格矩阵和紧凑轮次样式；在compact.css之后加载 |
+| [apply-school-update.ps1](apply-school-update.ps1) | Windows停服和后台重启入口；保留学生档案（UTF-8 BOM） |
+| [lib/student-reset.mjs](lib/student-reset.mjs) | 一次性清空、完整备份、事务与重复执行保护 |
+| [scripts/clear-students.mjs](scripts/clear-students.mjs) | 显式调用的学生清理CLI；不在普通启动时触发 |
 | [public/compact.css](public/compact.css) | 最新紧凑布局、详细来源显示开关样式、提示框、手机布局；在基础样式后加载 |
 | [public/app.js](public/app.js) | 前端主路由、登录、学生与匹配、问答、项目列表、编辑器、弹窗及事件处理 |
 | [public/styles.css](public/styles.css) | 基础设计变量、组件、表单和原始响应式布局 |
@@ -129,7 +211,14 @@ Git 提交和推送不会带走 `.data`，也不会把正在运行的数据库�
 | [lib/seed.mjs](lib/seed.mjs) | 根据来源数据建立首期项目规则；已有数据库不会因修改 seed 自动被覆盖 |
 | [lib/query.mjs](lib/query.mjs) | 本地自然语言条件解析与项目检索 |
 | [lib/llm.mjs](lib/llm.mjs) | 可选的 OpenAI 兼容语义模型接口 |
-| [lib/ingest.mjs](lib/ingest.mjs) | 本机 MinerU 调用、文本提取、关键词建议 |
+| [lib/ingest.mjs](lib/ingest.mjs) | 本机 MinerU 调用、完整文本提取与持久化状态 |
+| [lib/document-workflow.mjs](lib/document-workflow.mjs) | 上传自动入队、配置后继续、重启恢复和断流重试 |
+| [lib/document-ai.mjs](lib/document-ai.mjs) / [lib/document-schema.mjs](lib/document-schema.mjs) | 官方Responses流式调用、严格结构、完整要求和未知值 |
+| [lib/document-organizer.mjs](lib/document-organizer.mjs) | 学校归一化、原文证据校验、版本差异与疑点 |
+| [lib/document-publish.mjs](lib/document-publish.mjs) | 整体确认、事务发布与并发／重复确认保护 |
+| [lib/imported-program.mjs](lib/imported-program.mjs) | 新学校规则校验及保守匹配，不继承种子项目条件 |
+| [lib/openai-config.mjs](lib/openai-config.mjs) / [lib/network.mjs](lib/network.mjs) | 私密配置、连接检查、Node进程代理 |
+| [public/document-auto-review.js](public/document-auto-review.js) / [public/admissions-content.js](public/admissions-content.js) | 疑点高亮、完整要求、整体确认及新项目展示 |
 | [data/admissions-source.json](data/admissions-source.json) | 当前手册的结构化来源记录，包括项目、要求、成绩、日程 |
 | [data/keywords.txt](data/keywords.txt) | 本科申请关键词库，含 F021—F025 |
 | [public/sources/aohb27.pdf](public/sources/aohb27.pdf) | 已收录的完整 23 页招生手册，原文证据入口 |
@@ -139,6 +228,9 @@ Git 提交和推送不会带走 `.data`，也不会把正在运行的数据库�
 | [tests/engine.test.mjs](tests/engine.test.mjs) | 核心判定逻辑回归 |
 | [tests/api.test.mjs](tests/api.test.mjs) | 账号、协作、版本、冲突、上传及历史 API 回归 |
 | [tests/project-detail.test.mjs](tests/project-detail.test.mjs) | 防止详情精简时丢路径、门槛、证明或特殊条件 |
+| [tests/school-detail.test.mjs](tests/school-detail.test.mjs) | 资格拆分／动态扩展、28条门槛聚合、11轮日期完整性、学校导航与年度隔离 |
+| [tests/student-reset.test.mjs](tests/student-reset.test.mjs) | 清理备份、账号及规则保留、重复执行保护 |
+| [tests/fixtures/students.mjs](tests/fixtures/students.mjs) | 仅自动测试使用的虚构学生；不再从正式seed导出 |
 
 原始资料工作目录为 `D:\AI-Yang.cn\analysis\aohb27\outputs\aohb27_review\`。这是旧电脑的资料来源，不是新电脑运行网站的前提；网页所需 PDF、词库和结构化来源已经在仓库内。原 Excel 分析表、原生成脚本以及整个 MinerU 安装目录并不随本仓库完整迁移。
 
@@ -192,13 +284,20 @@ MINERU_MODEL_BASE_DIR=D:/AI-Yang.cn/tools/mineru/models
 MINERU_BIN_DIR=D:/AI-Yang.cn/tools/mineru/bin
 ```
 
-如继续沿用该安装方式，先使用原安装目录的 `mineru.cmd server start` 启动解析服务。不要停止其他项目共用的MinerU进程。旧电脑曾遇到MinerU直接写网站目录的权限问题；现适配器读取结构化标准输出，由网站负责保存，已验证可用。
+网站在解析PDF时通过 `lib/mineru.mjs` 检查服务；未运行时自动执行一次 `server start`，等待本机标准解析引擎就绪。已运行的服务直接复用，不会停止或重启其他项目共用的MinerU进程。冷启动最多等待3分钟；解析最多等待10分钟，单次等待超时会继续等待原任务，不强制重新解析。旧电脑曾遇到MinerU直接写网站目录的权限问题；现适配器读取结构化标准输出，由网站负责保存，已验证可用。
 
-问答默认是本地条件解析，尚未配置外部通用语言模型。可通过 `LLM_BASE_URL`、`LLM_API_KEY`、`LLM_MODEL` 接入兼容接口；三项配置齐全才启用，密钥不提交Git。MinerU视觉模型不是通用问答模型。
+文档自动整理已经通过团队设置接入官方OpenAI。条件问答是独立功能，仍默认本地条件解析，可通过 `LLM_BASE_URL`、`LLM_API_KEY`、`LLM_MODEL` 配置；不能把文档模型已接通误写成问答也已联调。MinerU负责原文提取，OpenAI负责语义整理。
 
 ## 7. 验证与接续边界
 
-上轮功能代码验证结果：
+以下为历史验证（Linux / Node 24.19.0）；当前有效状态见第0节及 `docs/verification.md` 最新记录：
+
+- `npm test`：49项通过；原逻辑与详情回归、新资格矩阵、学校聚合和一次性清理均覆盖。
+- `npm run check`：语法、初始规则、必要资源及全部PowerShell脚本BOM通过。
+- 独立DOM交互检查：空学生列表、学校列表→学校→项目、年度切换、11轮显示、OSSD搜索、原文开关、材料弹窗和新增档案的资格选项通过。DOM检查工具仅装在隔离的 `.qa/`，未新增运行依赖。
+- 浏览器无法访问开发容器服务，本地文件预览又被浏览器安全策略阻止；未绕过该限制。新版桌面／手机真实布局和Windows更新脚本尚待本机确认。
+
+以下为**上轮旧版界面**的历史验证，截图不代表本轮学校总览：
 
 - `npm run check`：JavaScript语法、五项目seed规则及必要资源检查通过。
 - `npm test`：41项通过，包括21项引擎测试、API工作流及11项子测试、8项详情完整性测试。
@@ -207,15 +306,15 @@ MINERU_BIN_DIR=D:/AI-Yang.cn/tools/mineru/bin
 - 材料提示支持停留、键盘与点击，手机可打开完整说明；390×844和1280px桌面布局没有页面横向溢出，宽表在自身容器内滚动。
 - 截图见 [项目总览](docs/screenshots/compact-project.png)、[成绩及材料](docs/screenshots/compact-scores.png)、[手机](docs/screenshots/compact-mobile.png)。
 
-已知实现边界：未部署公网；Docker构建与外部HTTPS反向代理未验收；外部语言模型未联调。自然语言解析有明确支持范围，不声称能处理所有自由问法。新增项目或来源条款时，需要同步检查判定、详情归并、材料提示和证据是否覆盖，尤其 `project-detail.js` 中的条目编号与项目专属处理。
+已知实现边界：未部署公网；Docker构建与外部HTTPS反向代理未验收。文档OpenAI已联调，条件问答模型未联调。自动整理能生成完整待核对草稿，但仍需用户整体确认；复杂资格事实保留待核实，不把模型判断当作确定资格。补充通知不会直接替换已有完整手册，需提供完整资料后整理。
 
-本交接属于文档更新，未修改功能代码，未重复运行上述整套功能测试。
+原Windows启动／停止脚本本轮未改逻辑。新增更新脚本已核对BOM与调用路径；清理逻辑在SQLite测试中通过，Windows PowerShell 5.1实际执行与登录自动启动仍需本机确认。
 
 ## 8. 接续修改的工作方法
 
 1. 先读本文件第0、0A节，再读所需代码与 `docs/architecture.md`。涉及业务逻辑时补读原始交接第0A节。
 2. 确认当前目录、分支与未提交修改；保留用户在新电脑已有的工作。不要因旧绝对路径不存在而另建一套实现。
-3. 普通界面修改优先调整 `public/project-detail.js` 与 `public/compact.css`；其他页面修改 `public/app.js`。基本样式与紧凑覆盖都要考虑。
+3. 学校总览优先读 `school-detail.js`、资格矩阵 `qualification-matrix.js`、共用模型 `requirement-model.js`、轮次 `rounds-table.js` 与 `school.css`；路由和其他页面修改 `app.js`，同时考虑基础与compact样式覆盖。
 4. 涉及条件、门槛、版本或数据结构时检查引擎和对应回归测试。修改seed不会自动迁移现有数据库；需要数据变更时制定保留人工修改的迁移。
 5. 用真实浏览器查看改动后的页面。当前原生前端没有热更新，改代码后需要刷新；先确认新代码已经加载，再判断效果。
 6. 修改代码后做与变更相关的验证；主要回归命令是 `npm run check` 和 `npm test`。不需要为纯文案或可逆样式调整机械新增测试。
@@ -225,4 +324,4 @@ MINERU_BIN_DIR=D:/AI-Yang.cn/tools/mineru/bin
 
 ## 9. 可直接粘贴给新电脑 Codex 的提示
 
-> 这是继续开发现有 SGU 选校网站的任务。请先阅读仓库根目录 HANDOFF.md 的第0、0A、1、2、3节，以及 docs/architecture.md；业务细节参考 docs/requirements-handoff.md 第0、0A节。旧交接中的“尚未开始制作网站”是历史记录，现已完成开发并同步GitHub。仓库为 https://github.com/yangdyjp-glitch/SGU.git，分支main。请先检查当前代码与未提交修改，基于现有实现继续，保留已确认的业务逻辑。界面须简洁、高信息密度，但路径要求和成绩要求不能遗漏，路径B必须完整显示 (WASC, NEASC, Cognia, COBIS, CIS or ACSI)。详细原文链接默认关闭，材料细则通过提示查看，重复内容集中展示。账号、学生及人工规则在本机.data中，不随Git迁移。读完后按我接下来的具体修改要求执行，不自行新增功能或重置数据。
+> 这是继续开发现有 SGU 选校网站的任务。请先阅读仓库根目录 HANDOFF.md 的第0、0A、1、2、3节，以及 docs/architecture.md；业务细节参考 docs/requirements-handoff.md 第0、0A节。旧交接中的“尚未开始制作网站”是历史记录。仓库为 https://github.com/yangdyjp-glitch/SGU.git，当前工作目录D:\AI-Yang.cn\SGU。请先检查代码与未提交修改，基于现有实现继续，保留已确认的业务逻辑。界面须简洁、高信息密度，但路径和成绩要求不能遗漏；WASC、NEASC、Cognia、COBIS、CIS、ACSI六种认证分别保留，不再显示重复的国际学校十二年课程汇总行。学校列表先进入学校，再进入项目；共同要求标明适用项目，资格用统一可否矩阵（OSSD/DSE未列明显示否但不自动否决其他路径）。附加条件尽量同行，背景举例通过提示查看。轮次一行、初筛／面试／结果分列。详细原文链接默认关闭，材料及豁免细则通过悬停、聚焦或点击提示查看。保留完整资格、语言成绩及豁免证明要求。不再清空学生档案或历史，更新脚本只重启服务。账号、学生及人工规则在本机.data中，不随Git迁移。读完后按我接下来的具体修改要求执行，不自行新增功能或重置数据。

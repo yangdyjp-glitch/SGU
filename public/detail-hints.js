@@ -1,0 +1,22 @@
+export function renderInfoHint(label, parts, esc) {
+  if (!parts?.length) return '';
+  return `<button type="button" class="info-hint" data-act="detail-info" data-info="${esc(JSON.stringify({ label, parts }))}" aria-label="查看${esc(label)}说明" aria-haspopup="dialog"><span aria-hidden="true">i</span></button>`;
+}
+
+// Ordinary hints retain their text layout; qualification hints show each
+// underlying type and its evidence without turning an unknown into a rejection.
+export function renderDetailInfoContent(info, esc, evidence = () => '') {
+  const refs = sources => [...new Map((sources || []).filter(Boolean).map(source => [JSON.stringify(source), source])).values()].map(evidence).join(' ');
+  const paragraph = text => esc(text || '').replace(/\n/g, '<br>');
+  const states = { accepted: '可申请', excluded: '不接受', unknown: '需核实' };
+  const parts = (info.parts || []).map(part => {
+    if (part.rows) return `<section class="qualification-decision-section">${part.title ? `<h3>${esc(part.title)}</h3>` : ''}<table class="qualification-decision-table"><thead><tr><th scope="col">资格类型</th><th scope="col">结论</th><th scope="col">条件与依据</th></tr></thead><tbody>${part.rows.map(row => {
+      const state = Object.hasOwn(states, row.state) ? row.state : 'unknown';
+      const notes = (row.notes || []).filter(Boolean).map(note => `<div class="hint-part">${note.title ? `<b>${esc(note.title)}</b>` : ''}<p>${paragraph(note.text)}</p></div>`).join('');
+      return `<tr><th scope="row">${esc(row.label)}</th><td><span class="qualification-decision-status ${state}">${states[state]}</span></td><td><p>${paragraph(row.text)}</p>${refs(row.sources)}${notes ? `<details class="qualification-explanation"><summary>补充依据</summary>${notes}</details>` : ''}</td></tr>`;
+    }).join('')}</tbody></table></section>`;
+    if (part.collapsed) return `<details class="qualification-explanation"><summary>${esc(part.title || '补充说明')}</summary><p>${paragraph(part.text)}</p></details>`;
+    return `<div class="hint-part">${part.title ? `<b>${esc(part.title)}</b>` : ''}<p>${paragraph(part.text)}</p></div>`;
+  }).join('');
+  return `<strong>${esc(info.label)}</strong>${parts}`;
+}

@@ -22,7 +22,7 @@ test('all academic alternatives retain accreditation, qualification lists, scope
     for (const path of view.paths) assert.equal(path.description.includes('18岁'), ['G', 'H', 'I'].includes(path.id));
     if (p.id === 'JDP') {
       assert.ok(!view.paths.some(x => ['F', 'H'].includes(x.id)));
-      assert.match(view.academic.find(x => x.id === 'R013').detail, /F路径.*H路径.*専修学校の高等課程.*不泛指全部职业教育/);
+      assert.match(view.academic.find(x => x.id === 'R013').detail, /短学制加MEXT指定预备教育.*日本高卒认定考试.*専修学校の高等課程.*不泛指全部职业教育/);
     } else {
       assert.match(view.paths.find(x => x.id === 'F').description, /少于12年.*日本大学预备/);
       assert.match(view.paths.find(x => x.id === 'H').description, /高等学校卒業程度認定試験/);
@@ -34,14 +34,19 @@ test('all 28 language rows render their live threshold, version, basis, individu
   let count = 0;
   for (const p of programs) {
     const html = render(p);
+    assert.ok(html.includes('<th>备注</th>'));
     for (const row of p.language) {
       const rendered = html.match(new RegExp(`<tr data-score="${row.id}">([\\s\\S]*?)</tr>`))?.[1];
       assert.ok(rendered, row.id);
       assert.ok(rendered.includes(esc(row.exam)));
       assert.ok(rendered.includes(`≥ ${row.score}`));
-      assert.ok(rendered.includes(esc(row.basis)));
-      if (row.version !== '未注明') assert.ok(rendered.includes(esc(row.version)));
-      if (row.note) assert.ok(rendered.includes(esc(row.note)));
+      assert.ok(rendered.includes(`<strong>≥ ${row.score}</strong><span class="score-basis">（${esc(row.basis)}）</span>`));
+      const cells = [...rendered.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map(match => match[1]);
+      assert.equal(cells.length, 7);
+      assert.equal(cells[0], `<strong>${esc(row.exam)}</strong>`);
+      assert.doesNotMatch(rendered, /<br|class="round-meta"|class="score-note"/);
+      if (row.version !== '未注明') assert.ok(cells.at(-1).includes(esc(row.version)));
+      if (row.note) assert.ok(cells.at(-1).includes(esc(row.note)));
       for (const field of ['reading', 'listening', 'writing', 'speaking']) {
         const expected = typeof row[field] === 'number' ? `≥ ${row[field]}` : row[field] === '不适用' ? '—' : row[field];
         assert.ok(rendered.includes(`<td>${esc(expected)}</td>`), `${row.id}/${field}`);
@@ -73,7 +78,8 @@ test('six-year waiver criteria and school proof are centralized once and not rep
     assert.match(view.waivers[0].paragraphs.join(' '), /入学.*6年.*每所学校.*除非最后一所.*School Profile/);
     assert.ok(!view.academic.some(r => ['R027', 'R067'].includes(r.id)));
     assert.ok(!view.materials.some(m => m.parts.some(part => /最近6年|6年英语教育证明范围/.test(part.text))));
-    assert.equal(text(html).split(p.requirements.find(r => r.id === 'R027').detail).length - 1, 1);
+    assert.equal(text(html).split(p.requirements.find(r => r.id === 'R027').detail).length - 1, 0);
+    assert.ok(html.includes(`data-info="${esc(JSON.stringify({ label: view.waivers[0].title, parts: view.waivers[0].paragraphs.map(text => ({ text })) }))}"`));
   }
 });
 
@@ -85,6 +91,13 @@ test('GLA conditional IB completion and JDP curriculum or country alternatives r
   assert.match(waiver, /Grade 9–12.*唯一教学语言.*未修读ESL.*美国区域认证.*IB.*CXC.*英国.*学校所在地不限/);
   const countries = jdp.requirements.find(r => r.id === 'R026').detail.replace('保留文件分组。', '');
   assert.ok(waiver.includes(countries));
+  for (const id of ['GLA', 'JDP']) {
+    const p = program(id), view = buildProjectView(p), html = render(p);
+    for (const waiver of view.waivers) {
+      assert.ok(html.includes(`data-info="${esc(JSON.stringify({ label: waiver.title, parts: waiver.paragraphs.map(text => ({ text })) }))}"`));
+      for (const paragraph of waiver.paragraphs) assert.ok(!text(html).includes(paragraph));
+    }
+  }
 });
 
 test('material explanations retain China certificates, translation exceptions, essays and delivery instructions', () => {

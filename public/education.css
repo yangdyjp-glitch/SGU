@@ -1,0 +1,53 @@
+/* Emphasize qualifications and outcomes while keeping the explanatory column compact. */
+#detail-academic>.panel-head h2{font-size:18px}
+#detail-academic>.panel-head>.small,.qualification-tools input,.qualification-tools>.small{font-size:13px}
+.qualification-matrix thead th:not(:last-child){font-size:13px}
+.qualification-matrix tbody th[scope=row]{font-size:14px}
+.qualification-matrix .qualification-status{font-size:14px;line-height:24px}
+.qualification-matrix .qualification-group-heading th{background:#eaf2ee;color:var(--pine);font-size:15px;padding:7px 12px}
+.qualification-hint{width:23px;height:22px;margin:0 0 0 3px;vertical-align:middle}
+.qualification-hint>span{font-family:inherit;font-size:11px;color:#91621f;border-color:#ba964e}
+.qualification-status.partial{background:#fff1ca;color:#805619;min-width:30px}
+.qualification-scope-note{background:#fff6df;color:#805619;padding:1px 5px;border-radius:3px;box-decoration-break:clone;-webkit-box-decoration-break:clone;margin-right:6px;line-height:inherit}
+.qualification-matrix .acceptance-column{width:56px;min-width:56px}
+.qualification-matrix,.project-detail .qualification-matrix{table-layout:fixed;min-width:var(--qualification-min-width,880px)}
+.qualification-name-column{width:300px}.qualification-program-column{width:56px}
+.qualification-matrix .qualification-conditions{vertical-align:middle}
+.qualification-conditions-line{display:flex;align-items:center;gap:4px;min-width:0}
+.qualification-conditions-text{display:block;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qualification-conditions-line .qualification-notes-hint{flex:0 0 23px;margin:0}
+.qualification-matrix .qualification-result{display:inline-block;width:auto;min-width:32px;height:auto;min-height:26px;padding:1px 5px;margin:0;white-space:nowrap;vertical-align:middle;border:1px solid transparent}
+.qualification-result:hover{border-color:currentColor}
+.qualification-status.excluded,.qualification-decision-status.excluded,.qualification-scope-note.excluded{color:#8b3d3d;background:#f8eaea}
+.qualification-status.unknown,.qualification-decision-status.unknown{color:#805619;background:#fff1ca}
+.qualification-scope-note.accepted,.qualification-decision-status.accepted{background:var(--mint);color:var(--pine)}
+.qualification-decision-summary{margin-right:6px}
+.qualification-decision-section{margin:14px 0}
+.qualification-decision-section h3{font-size:13px;line-height:1.5;color:var(--muted);margin:0 0 7px}
+.qualification-decision-table{table-layout:fixed;width:100%;font-size:13px;line-height:1.65}
+.qualification-decision-table th,.qualification-decision-table td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top;white-space:normal;overflow-wrap:anywhere}
+.qualification-decision-table thead th{font-size:12px;background:#f5f9f6}
+.qualification-decision-table th:first-child{width:30%}
+.qualification-decision-table th:nth-child(2){width:17%}
+.qualification-decision-table tbody th{background:transparent;font-size:14px;font-weight:600;color:var(--ink)}
+.qualification-decision-table p{margin:0;white-space:normal}
+.qualification-decision-status{display:inline-block;border-radius:4px;padding:2px 6px;font-size:13px;font-weight:600;white-space:nowrap}
+.qualification-explanation{margin-top:12px;border-top:1px solid var(--line);padding-top:8px;font-size:12px;color:var(--muted)}
+.qualification-explanation summary{cursor:pointer}.qualification-explanation p{margin-top:6px}
+.detail-tooltip.qualification-tooltip{width:620px}
+.qualification-tooltip .qualification-decision-table th,.qualification-tooltip .qualification-decision-table td{padding:8px}
+@media(max-width:600px){
+ .qualification-decision-table,.qualification-decision-table tbody{display:block;width:100%}
+ .qualification-decision-table thead{display:none}
+ .qualification-decision-table tr{display:grid;grid-template-columns:minmax(0,1fr) auto;border-bottom:1px solid var(--line);padding:10px 0;gap:7px 10px}
+ .qualification-decision-table tbody th,.qualification-decision-table tbody td,.qualification-tooltip .qualification-decision-table th,.qualification-tooltip .qualification-decision-table td{width:auto;padding:0;border:0}
+ .qualification-decision-table tbody th:first-child{width:auto}
+ .qualification-decision-table td:last-child{grid-column:1/-1}
+}
+.education-form{min-width:0}.education-category{border-top:1px solid var(--line);padding:14px 0}.education-category>h3{font-size:16px;margin:0 0 12px}.education-category h4{font-size:14px;margin:8px 0}
+.education-options{display:flex;flex-wrap:wrap;gap:5px 18px;margin:7px 0 10px}.education-options .checkbox-label{font-size:13px;min-height:28px;gap:6px;max-width:100%}.education-options input[type=checkbox]{flex:0 0 auto}.education-options .checkbox-label>span{min-width:0;overflow-wrap:anywhere}
+.education-category details{border-top:1px solid var(--line);margin-top:10px;padding-top:7px}.education-category summary{font-size:13px}.education-category details .form-grid{margin-top:10px}
+.education-credential,.education-review{background:#f7faf8;border:1px solid var(--line);border-radius:7px;padding:10px;margin:9px 0}.education-credential strong{font-size:13px;overflow-wrap:anywhere}.education-credential-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 12px;margin-top:8px}.education-credential .field label{font-size:12px}.education-credential .field input,.education-credential .field select{min-width:0;width:100%;font-size:13px;padding:7px 9px}.education-credential small{font-size:11px}.education-legacy{font-size:12px;color:#785b24;background:#fff6df;padding:7px 10px}
+.education-category .form-grid{gap:10px 16px}.education-category .field{min-width:0}.education-category .field label{overflow-wrap:anywhere}
+@media(max-width:700px){.education-credential-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.education-options{gap:5px 10px}.education-category{padding:12px 0}.education-options .qualification-hint{width:28px;height:28px}}
+@media(max-width:420px){.education-credential-fields{grid-template-columns:minmax(0,1fr)}}
