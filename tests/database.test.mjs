@@ -37,6 +37,8 @@ test('live account wins; compatible newer rules merge; ambiguous rules are rejec
 
 export async function exerciseDatabase(db){
  await initializeDatabase(db);const snapshot=fixture();await importSnapshot(db,snapshot);await importSnapshot(db,snapshot);await verifySnapshot(db,snapshot);
+ const exec=db.exec;db.exec=()=>assert.fail('an initialized database must not take DDL locks on restart');
+ try{await initializeDatabase(db);}finally{db.exec=exec;}
  assert.equal(Number((await db.prepare('SELECT count(*) n FROM students').get()).n),1);
  await assert.rejects(db.transaction(async()=>{await db.prepare("UPDATE programs SET version=9 WHERE id='P1'").run();throw new Error('rollback');}),/rollback/);
  assert.equal((await db.prepare("SELECT version FROM programs WHERE id='P1'").get()).version,1);
