@@ -114,7 +114,9 @@ MINERU_BIN_DIR=D:/AI-Yang.cn/tools/mineru/bin
 - `apply-school-update.ps1` 仅重启并检查服务，不再清空学生档案、匹配记录或操作历史。普通启动同样保留现有数据。
 - 多人须访问**同一台服务器**。每个人自行运行一份程序会得到独立数据，不会自动跨机器同步。
 
-团队部署时，先在本机完成首个账号设置，再通过HTTPS反向代理提供内部地址，并设置`APP_ORIGIN`与`COOKIE_SECURE=true`。开发默认只绑定`127.0.0.1`。提供Dockerfile及compose示例，但本仓库提交本身不会部署公网服务。
+线上工作台已部署到 **https://sgu.up.railway.app/**。后续修改统一采用“本地修改与验证 → 推送`main` → 检查Railway部署成功 → 检查线上功能”的流程；用户已授权常规更新直接上线。发布目标见 [AGENTS.md](AGENTS.md)。本地与线上保留各自数据库、上传资料及密钥，代码发布不覆盖现有业务数据。
+
+独立部署时，应设置`APP_ORIGIN`与`COOKIE_SECURE=true`，通过HTTPS提供服务。开发默认只绑定`127.0.0.1`，项目还提供Dockerfile及compose示例：
 
 ```sh
 docker compose up -d --build
