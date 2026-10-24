@@ -5,14 +5,15 @@ import { mkdir } from 'node:fs/promises';
 import { openDatabase,initializeDatabase } from '../lib/database.mjs';
 import { readDocument,readDocumentSummaries,readRecoveryDocuments } from '../lib/document-storage.mjs';
 import { documentSummary } from '../public/document-status.js';
+import { reviewValidationVersion } from '../lib/document-review-version.mjs';
 
 export async function exerciseDocumentReads(db){
  const text='不得遗漏的完整资格、成绩与原文。'.repeat(3000);
  const large={text,suggestions:[{text}],projectDraft:{program:{text}},previousManualDraft:{text},previousAutoReview:{text},analysis:{text},reviewerFeedback:text};
  const rows=[
-  {id:'poll-review',status:'review',statusVersion:8,...large,autoReview:{version:4,validationVersion:3,entries:[{text}]}},
+  {id:'poll-review',status:'review',statusVersion:8,...large,autoReview:{version:4,validationVersion:reviewValidationVersion,entries:[{text}]}},
   {id:'poll-parsing',status:'parsing',organizingProgress:{phase:'pdf',page:2,pages:3}},
-  {id:'poll-extracting',status:'extracting',text,autoReview:{version:1,validationVersion:3,entries:[{text}]}},
+  {id:'poll-extracting',status:'extracting',text,autoReview:{version:1,validationVersion:reviewValidationVersion,entries:[{text}]}},
   {id:'poll-config',status:'needs_configuration',text:''},
   {id:'poll-legacy',status:'review',text},
   {id:'poll-old-validation',status:'review',text,autoReview:{version:1,validationVersion:2}},

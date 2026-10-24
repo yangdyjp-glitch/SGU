@@ -13,6 +13,7 @@ import { renderProjectDetail } from '../public/project-detail.js';
 import { renderSchoolDetail } from '../public/school-detail.js';
 import { seedPrograms } from '../lib/seed.mjs';
 import { queryPrograms } from '../lib/query.mjs';
+import { reviewValidationVersion } from '../lib/document-review-version.mjs';
 process.env.DATA_DIR='.qa/auto-unit-'+randomUUID();
 process.env.DATABASE_URL='';
 const {createDocumentWorkflow,emptyManualDraft}=await import('../lib/document-workflow.mjs');
@@ -216,7 +217,7 @@ test('fragment citations remain verifiable, infer unique pages and retain fabric
 test('validation upgrades preserve model doubts and formal values, without touching published reviews',()=>{
  const d=doc();d.autoReview=buildDocumentReview(admissionsFixture(),d,[]);delete d.autoReview.validationVersion;
  for(const entry of d.autoReview.entries){delete entry.modelDoubts;entry.issues.push({path:'/paths',reason:'此条件已完整保留，学生匹配时需要核实相关事实',kind:'uncertain'});}
- const refreshed=refreshReviewValidation(d,[]);assert.equal(refreshed.version,2);assert.equal(refreshed.validationVersion,3);assert.equal(refreshed.entries[0].issues.length,1);assert.match(refreshed.entries[0].issues[0].reason,/拼分/);assert.deepEqual(refreshed.entries[0].program,d.autoReview.entries[0].program);
+ const refreshed=refreshReviewValidation(d,[]);assert.equal(refreshed.version,2);assert.equal(refreshed.validationVersion,reviewValidationVersion);assert.equal(refreshed.entries[0].issues.length,1);assert.match(refreshed.entries[0].issues[0].reason,/拼分/);assert.deepEqual(refreshed.entries[0].program,d.autoReview.entries[0].program);
  d.status='published';assert.equal(refreshReviewValidation(d,[]),null);
 });
 
