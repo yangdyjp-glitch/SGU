@@ -125,16 +125,18 @@ test('certification deduplication keeps each program scope even when path ids ov
   for(const p of programs)for(const path of p.paths)assert.ok(rows.some(r=>r.cells.some(c=>c.programId===p.id&&c.pathIds.includes(path.id))));
 });
 
-test('first-year and transfer projects share one overview while keeping separate qualifications', () => {
+test('first-year and transfer switch separate overview content with the same qualification catalogue', () => {
   const first=imported('AI-first'),transfer=imported('AI-transfer','三年级编入（材料审查）');
   first.paths[0].all[0].label='一年级专属条件';transfer.paths[0].all[0].label='编入专属条件';
   const all=[transfer,first];
   const initial=renderSchoolDetail(first.school,all,ui);
-  assert.match(initial,/一年级专属条件/);assert.match(initial,/编入专属条件/);
+  assert.match(initial,/一年级专属条件/);assert.doesNotMatch(initial,/编入专属条件/);
   const selected=renderSchoolDetail(first.school,all,ui,{channel:transfer.channel});
   assert.equal(selected,initial,'legacy channel filters must no longer hide projects');
   assert.doesNotMatch(selected,/data-school-channel/);
-  assert.match(selected,/FLA · 申请/);assert.match(selected,/FLA · 三年编入/);
+  assert.ok(selected.includes(`href="#program/${first.id}"`));assert.ok(!selected.includes(`href="#program/${transfer.id}"`));
+  const transferView=renderSchoolDetail(first.school,all,ui,{entryGroup:'transfer'});
+  assert.match(transferView,/编入专属条件/);assert.doesNotMatch(transferView,/一年级专属条件/);
   assert.doesNotMatch(renderProjectDetail(first,ui),/编入专属条件/);
   assert.doesNotMatch(renderProjectDetail(transfer,ui),/一年级专属条件/);
 });
@@ -152,11 +154,13 @@ test('Sophia FLA application and transfer are two visible projects with separate
   assert.equal(school.channels.length,1);
   const html=renderSchoolDetail('上智大学',all,ui,{year:2027,channel:transfer.channel});
   assert.doesNotMatch(html,/data-school-channel|下一年度专属资格/);
-  assert.ok(html.includes(`href="#program/${first.id}"`));assert.ok(html.includes(`href="#program/${transfer.id}"`));
-  assert.equal((html.match(/data-compare=/g)||[]).length,2);
-  assert.match(html,/FLA · 申请/);assert.match(html,/FLA · 三年编入/);
-  assert.match(html,/一年级申请须完成十二年教育/);assert.match(html,/须完成大学两年且为正式学位生/);
-  for(const p of [first,transfer])assert.ok(html.includes(p.materials[0].note));
+  assert.ok(html.includes(`href="#program/${first.id}"`));assert.ok(!html.includes(`href="#program/${transfer.id}"`));
+  assert.equal((html.match(/data-compare=/g)||[]).length,1);
+  assert.match(html,/一年级申请须完成十二年教育/);assert.doesNotMatch(html,/须完成大学两年且为正式学位生/);
+  assert.ok(html.includes(first.materials[0].note));assert.ok(!html.includes(transfer.materials[0].note));
+  const transferHtml=renderSchoolDetail('上智大学',all,ui,{year:2027,entryGroup:'transfer'});
+  assert.match(transferHtml,/须完成大学两年且为正式学位生/);assert.doesNotMatch(transferHtml,/一年级申请须完成十二年教育/);
+  assert.ok(transferHtml.includes(transfer.materials[0].note));assert.ok(!transferHtml.includes(first.materials[0].note));
   const rows=buildQualificationRows([first,transfer],all);
   assert.deepEqual(rows.find(r=>r.id==='standard12').cells.map(c=>c.accepted),[true,false]);
   assert.deepEqual(rows.find(r=>r.localPaths?.[transfer.id]).cells.map(c=>c.accepted),[false,true]);

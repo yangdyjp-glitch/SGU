@@ -2,6 +2,9 @@
 const clean = value => String(value || '').trim().replace(/\s+/g, ' ');
 export const programCode = p => /^(?:项目|本科项目|未注明|待确认)$/.test(clean(p.code)) ? '' : clean(p.code) || (/^[A-Z][A-Z0-9-]{1,14}$/.test(p.id || '') ? p.id : '');
 export const programOriginalTitle = p => [...new Set([p.code, p.name, p.channel].map(clean).filter(Boolean))].join(' · ');
+// Entry groups only control presentation. They never merge records or rules.
+export const programEntryGroup = p => /编入|转入|transfer/i.test(p.channel || '') ? 'transfer' : 'application';
+export const entryGroupLabel = group => group === 'transfer' ? '编入项目' : '申请项目';
 
 export function programEntryLabel(program) {
   const raw = clean(program.channel);

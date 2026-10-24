@@ -1,6 +1,7 @@
 import { renderProjectDetail, setupDetailHints } from './project-detail.js';
 import { groupSchools, createSchoolOverview, schoolHref } from './school-detail.js';
 import { mountSchoolOverview } from './school-overview.js';
+import { setupTableScrolling } from './table-scroll.js';
 import { buildProgramTitles, programTitle, programCode, programEntryLabel, programOriginalTitle } from './program-presentation.js';
 import { createProjectDrawer } from './project-drawer.js';
 import { buildQualificationCatalog, buildQualificationRows } from './qualification-matrix.js';
@@ -43,7 +44,7 @@ function field(label,name,value='',type='text',help=''){return `<div class="fiel
 function select(label,name,value,options,help=''){return `<div class="field"><label for="f-${esc(name)}">${esc(label)}</label><select id="f-${esc(name)}" name="${esc(name)}">${options.map(o=>{const [v,l]=Array.isArray(o)?o:[o,o];return `<option value="${esc(v)}" ${String(value??'')===String(v)?'selected':''}>${esc(l)}</option>`;}).join('')}</select>${help?`<small>${esc(help)}</small>`:''}</div>`;}
 const triField=(label,name,value,help='')=>select(label,name,value,[['','待核实'],['true','是'],['false','否']],help);
 function textArea(label,name,value,rows=4){return `<div class="field"><label for="f-${esc(name)}">${esc(label)}</label><textarea id="f-${esc(name)}" name="${esc(name)}" rows="${rows}">${esc(value)}</textarea></div>`;}
-function showModal(title,body,wide=false){documentLoader.cancel();reviewingDocument=null;modalReturn=document.activeElement;$('#modal-root').innerHTML=`<div class="modal-backdrop"><section class="modal ${wide?'wide':''}" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-head"><h2 id="modal-title">${esc(title)}</h2><button class="icon-btn" data-act="close" aria-label="关闭">${icon('close')}</button></div><div class="modal-body">${body}</div></section></div>`;document.body.style.overflow='hidden';$('#app').inert=true;if(projectDrawer.element)projectDrawer.element.inert=true;setTimeout(()=>$('.modal input,.modal textarea,.modal select,.modal button')?.focus(),30);}
+function showModal(title,body,wide=false){const entryGroup=$('.project-drawer [data-entry-group]')?.dataset.entryGroup||$('.school-detail')?.dataset.entryGroup||$('.project-detail')?.dataset.entryGroup||'application';documentLoader.cancel();reviewingDocument=null;modalReturn=document.activeElement;$('#modal-root').innerHTML=`<div class="modal-backdrop"><section class="modal ${wide?'wide':''}" data-entry-group="${entryGroup}" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-head"><h2 id="modal-title">${esc(title)}</h2><button class="icon-btn" data-act="close" aria-label="关闭">${icon('close')}</button></div><div class="modal-body">${body}</div></section></div>`;document.body.style.overflow='hidden';$('#app').inert=true;if(projectDrawer.element)projectDrawer.element.inert=true;setTimeout(()=>$('.modal input,.modal textarea,.modal select,.modal button')?.focus(),30);}
 function closeModal(){if($('.modal [data-dirty="true"]')&&!confirm('关闭会丢弃尚未保存的修改。继续关闭？'))return;documentLoader.cancel();reviewingDocument=null;$('#modal-root').innerHTML='';document.body.style.overflow=projectDrawer.element?'hidden':'';$('#app').inert=Boolean(projectDrawer.element);if(projectDrawer.element)projectDrawer.element.inert=false;modalReturn?.focus({preventScroll:true});studentDraft=null;editDraft=null;}
 function formError(form,message){let el=form.querySelector('.error-box');if(!el){el=document.createElement('div');el.className='error-box';el.setAttribute('role','alert');form.prepend(el);}el.textContent=message;el.scrollIntoView({block:'nearest'});}
 async function refreshData(){const fresh=await api('/bootstrap');fresh.documents=fresh.documents.map(d=>mergeDocumentSnapshot(data?.documents.find(old=>old.id===d.id),d));data=fresh;csrf=data.csrf;auth=data.user;applyDocumentSnapshots(data.documents);}
@@ -71,10 +72,18 @@ function renderProgramRows(){
 }
 function schoolPage(name){
  schoolController?.dispose();
+ projectDrawer.close({restoreFocus:false});
  schoolOverview=createSchoolOverview(name,data.programs,{esc,icon,tag,button,evidence,showSources:showDetailedSources,documents:data.documents,selectedCompare,deferSections:true},schoolFilters.get(name)||{});
+ const visible=new Set(schoolOverview.programs.map(p=>p.id));
+ for(const id of selectedCompare)if(!visible.has(id))selectedCompare.delete(id);
  $('#main').innerHTML=schoolOverview.html;
  const root=$('.school-detail');if(!root)return;
- schoolController=mountSchoolOverview(root,schoolOverview,{openProject:openSchoolProject,onError:error=>toast(error.message)});
+ schoolController=mountSchoolOverview(root,schoolOverview,{openProject:openSchoolProject,onEntryChange:entryGroup=>{
+  schoolFilters.set(name,{...(schoolFilters.get(name)||{}),entryGroup});
+  schoolPage(name);
+  schoolController.reveal('projects');
+  $('[data-school-entry="'+entryGroup+'"]').focus({preventScroll:true});
+ },onError:error=>toast(error.message)});
  const section=location.hash.split('/')[2];if(section)schoolController.reveal(section);
 }
 const projectDrawer=createProjectDrawer({esc,icon,hasModal:()=>Boolean($('.modal')),render:p=>renderProjectDetail(p,{esc,icon,tag,button,evidence,showSources:showDetailedSources,allPrograms:data.programs,documents:data.documents,programLabel:p=>schoolOverview?.labels.get(p.id)||programLabel(p),programTitle:p=>schoolOverview?.titles.get(p.id)||displayTitle(p)})});
@@ -242,7 +251,7 @@ if(form.getAttribute('id')==='upload-form'){const file=$('#upload-file').files[0
 }catch(err){formError(form,err.message);if(err.current){const prior=document.createElement('details');prior.innerHTML=`<summary>查看服务器当前版本与本次修改的差异</summary>${diffTable(diffValues(err.current,form.getAttribute('id')==='program-form'?gatherProgram().program:gatherStudent()))}<p class="note warning">请复制保留你的修改，关闭编辑后刷新，再基于最新版本重新修改；系统不会覆盖同事的内容。</p>`;form.prepend(prior);}}finally{if(submit?.isConnected)submit.disabled=false;}});
 document.addEventListener('input',e=>{if(e.target.matches('[name="document-school"],[name="document-year"]'))updateDocumentTargets();if(e.target.matches('[data-qualification-search]')){const section=e.target.closest('.detail-section'),term=e.target.value.trim().toLowerCase();let visible=0;section.querySelectorAll('[data-qualification]').forEach(row=>{row.hidden=!row.dataset.qualificationLabel.includes(term);if(!row.hidden)visible++;});section.querySelectorAll('[data-qualification-group]').forEach(group=>{group.hidden=![...group.querySelectorAll('[data-qualification]')].some(row=>!row.hidden);});section.querySelector('.qualification-empty').classList.toggle('hidden',visible>0);}
 if(e.target.id==='student-search')renderStudentRows();if(e.target.id==='program-search')renderProgramRows();const form=e.target.closest('#student-form,#program-form');if(form)form.dataset.dirty='true';});
-document.addEventListener('change',e=>{if(e.target.name==='document-mode')updateDocumentTargets();if(e.target.matches('[data-school-year]')){const name=decodeURIComponent(location.hash.slice(1).split('/')[1]);schoolFilters.set(name,{year:e.target.value});schoolPage(name);return;}
+document.addEventListener('change',e=>{if(e.target.name==='document-mode')updateDocumentTargets();if(e.target.matches('[data-school-year]')){const name=decodeURIComponent(location.hash.slice(1).split('/')[1]);schoolFilters.set(name,{...(schoolFilters.get(name)||{}),year:e.target.value});schoolPage(name);return;}
 if(e.target.name==='program-intake')renderProgramRows();if(e.target.dataset.compare){e.target.checked?selectedCompare.add(e.target.dataset.compare):selectedCompare.delete(e.target.dataset.compare);updateCompareCount();}const form=e.target.closest('#student-form,#program-form');if(form)form.dataset.dirty='true';});
 document.addEventListener('keydown',e=>{const modal=$('.modal')||projectDrawer.element;if(!modal)return;if(e.key==='Escape'){$('.modal')?closeModal():projectDrawer.close();e.preventDefault();}if(e.key==='Tab'){const focusable=[...modal.querySelectorAll('button,input,select,textarea,a[href],summary')].filter(x=>!x.disabled&&x.offsetParent!==null),first=focusable[0],last=focusable.at(-1);if(!first)return;if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}});
 window.addEventListener('hashchange',route);
@@ -253,6 +262,7 @@ setInterval(async()=>{if(!data||document.hidden)return;try{const r=await api('/r
 try{const r=await api('/auth/state');auth=r.user;csrf=r.csrf||'';if(auth){await refreshData();await route();}else authPage(r.setup);}catch(e){$('#app').innerHTML=empty('无法连接工作台',e.message);}
 
 setupDetailHints({esc,showModal,evidence,resolveInfo:key=>schoolOverview?.resolveInfo(key)});
+setupTableScrolling();
 
 function refreshEducationSection(d,selectedProject=''){studentDraft=d;const panel=$('[data-step-panel="1"]');const open=[...panel.querySelectorAll('details')].map(x=>x.open);panel.innerHTML=renderEducationForm(d,data.programs,{esc,field,select,triField,textArea},selectedProject);panel.querySelectorAll('details').forEach((x,i)=>{if(open[i]!==undefined)x.open=open[i];});}
 document.addEventListener('change',e=>{if(!e.target.closest('#student-form'))return;if(['school','edu.curriculum','edu.schoolCountry','edu.schoolType','edu.educationYears'].includes(e.target.name)){$$('[name^="edu.certification."]').forEach(input=>input.value='');}if(e.target.matches('[data-education-choice],[data-education-cert]')){const selected=$('[name="edu.project"]')?.value,d=gatherStudent();updateEducationForm(e,d,data.programs);refreshEducationSection(d,selected);}else if(e.target.name==='edu.project'){const d=gatherStudent();refreshEducationSection(d,e.target.value);}});

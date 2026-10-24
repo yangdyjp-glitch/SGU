@@ -48,7 +48,7 @@ async function page() {
     }
   };
   const app = await vm.runInNewContext(`(async()=>{${code}\nreturn { setData(value){data=value;auth={login:'test'};}, applyDocumentSnapshots };})()`, {
-    ...imports, setupDetailHints() {}, document, window: { addEventListener() {} },
+    ...imports, setupDetailHints() {}, setupTableScrolling() {}, document, window: { addEventListener() {} },
     location: { hash: '#library' }, setInterval() {}, setTimeout, clearTimeout, confirm: () => true,
     fetch(url, options) {
       if (url === '/api/auth/state') return Promise.resolve({ ok: true, json: async () => ({ user: null }) });

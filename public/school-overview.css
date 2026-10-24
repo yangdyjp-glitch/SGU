@@ -1,7 +1,7 @@
 /* One school/year overview, with local project details and bounded long lists. */
-.school-overview-nav{position:sticky;top:60px;z-index:11;margin:0 0 16px;background:#fff;border:1px solid var(--line);border-radius:8px;flex-wrap:nowrap;overflow-x:auto;box-shadow:0 3px 12px #173e3208}
+.school-overview-nav{position:sticky;top:60px;z-index:11;margin:0 0 16px;background:#fff;border:1px solid var(--line);border-radius:8px;display:block;box-shadow:0 3px 12px #173e3208}
 .school-overview-nav a{flex-shrink:0;white-space:nowrap}
-.school-detail>.detail-section,.school-projects{scroll-margin-top:124px}
+.school-detail>.detail-section,.school-projects{scroll-margin-top:180px}
 .school-projects .toolbar{padding:10px 16px}.school-projects .search{width:360px;max-width:100%}
 .school-project-scroll.many-projects{max-height:420px;overflow:auto;overscroll-behavior:contain}
 .school-project-scroll thead th{position:sticky;top:0;z-index:1;background:#f6f9f7}
@@ -51,6 +51,51 @@
 .project-drawer .program-title .tag{max-width:100%;white-space:normal;overflow-wrap:anywhere}.project-drawer .project-actions{flex-wrap:wrap}.project-drawer .source-actions .btn{white-space:normal;max-width:100%;overflow-wrap:anywhere}
 .project-drawer .qualification-matrix{--qualification-min-width:680px!important}
 .compare-grid th{white-space:normal;min-width:200px;max-width:320px;overflow-wrap:anywhere}.compare-project-context{display:block;font-weight:400;line-height:1.5;margin-top:7px}
+/* The selected entry group scopes every section, including independent details. */
+[data-entry-group=transfer]{--pine:#285f92;--pine-deep:#204d77;--mint:#e6eff8;--line:#d8e3ed;--ink:#263e53;--muted:#64798c}
+[data-entry-group=transfer] .project-entry,[data-entry-group=transfer] .language-rules-heading{background:var(--mint)}
+[data-entry-group=transfer] .school-title{border-top:3px solid var(--pine);border-radius:8px}
+.school-entry-bar{display:flex;align-items:center;gap:12px;min-width:0;padding:3px 0 7px}
+.school-entry-bar .school-projects-label{color:var(--ink);font-weight:650;font-size:16px}
+.entry-switch{display:inline-flex;gap:3px;border:1px solid var(--line);border-radius:7px;padding:3px;background:var(--canvas);max-width:100%}
+.entry-switch button{border:0;border-radius:5px;background:transparent;font-weight:600;font-size:13px;color:var(--muted);padding:6px 13px;min-height:34px;white-space:nowrap}
+.entry-switch button[aria-pressed=true]{background:var(--pine);color:#fff;box-shadow:0 1px 4px #173e3220}
+.entry-switch button span{font-size:11px;opacity:.85;margin-left:3px;font-variant-numeric:tabular-nums}
+.school-section-links{display:flex;overflow-x:auto;gap:4px;border-top:1px solid var(--line);padding-top:4px}
+.school-detail>.detail-section,.school-projects{scroll-margin-top:180px}
+/* A bounded viewport keeps all columns present, with the first column frozen. */
+.qualification-scroll-frame{min-width:0;max-width:100%}
+.qualification-scroll-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 16px;background:var(--mint);color:var(--pine);font-size:12px}
+.qualification-scroll-tools label{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.qualification-scroll-tools input{width:160px;max-width:30vw;accent-color:var(--pine);cursor:ew-resize}
+.qualification-scroll-tools input:disabled{cursor:default;opacity:.4}
+.qualification-scroll{overflow:auto;max-height:min(70vh,850px);overscroll-behavior:contain;scrollbar-color:var(--pine) var(--mint);scrollbar-width:auto;isolation:isolate}
+.qualification-matrix{border-collapse:separate;border-spacing:0}
+.qualification-scroll .qualification-matrix thead th{position:sticky;top:0;z-index:3;background:#f6f9f8;box-shadow:0 1px 0 var(--line)}
+.qualification-scroll .qualification-matrix tr>th:first-child{position:sticky;left:0;z-index:2;box-shadow:1px 0 0 var(--line),4px 0 6px #173e3207;overflow-wrap:anywhere}
+.qualification-scroll .qualification-matrix thead th:first-child{z-index:4}
+.qualification-scroll .qualification-group-heading th,.qualification-scroll .qualification-group-heading td{background:var(--mint);color:var(--pine)}
+.qualification-scroll .qualification-group-heading td{padding:0}
+.qualification-scroll .qualification-matrix th[scope=row]{vertical-align:middle}
+.qualification-scroll .qualification-matrix tr:hover>th:first-child{background:#f5f9f8}
+[data-entry-group=transfer] .qualification-scroll .qualification-matrix thead th,[data-entry-group=transfer] .qualification-scroll .qualification-matrix tr:hover>th:first-child{background:#f2f6fb}
+.qualification-scroll .qualification-matrix .qualification-conditions{min-width:400px}
+/* Material categories replace repeated checklist rows; precise variants remain accessible. */
+.material-catalog{table-layout:fixed;min-width:500px}
+.material-catalog th,.material-catalog td{padding:6px 16px;vertical-align:middle;font-size:13px}
+.material-catalog thead th{font-size:12px}.material-category-column{width:42%}.material-scope-column{width:25%}
+.material-catalog tbody th{background:white;border-bottom:1px solid var(--line)}
+.material-catalog .material-group-button{display:inline-flex;align-items:center;gap:7px;width:auto;height:auto;min-height:30px;margin:0;padding:0;text-align:left;white-space:normal;color:var(--ink);font-size:14px;font-weight:600;max-width:100%;line-height:1.6}
+.material-group-button>span{flex-shrink:0}.material-group-note{color:var(--muted);font-size:12px}.material-group-note.optional{color:var(--amber)}
+.material-later{border-top:1px solid var(--line)}.material-later>summary{padding:10px 16px;font-size:13px;font-weight:600;color:var(--pine);cursor:pointer}
+.material-catalog-empty{padding:12px 16px;font-size:13px;color:var(--muted)}
+.material-project-filter{display:grid;gap:6px;font-size:13px;margin:15px 0}.material-project-filter select{width:100%;max-width:100%;border:1px solid var(--line);border-radius:5px;padding:8px;background:white;color:var(--ink)}
+.material-variant-list{min-width:0}.material-variant-list .material-variant{border-top:1px solid var(--line);padding:10px 0;overflow-wrap:anywhere}
+.material-variant summary{cursor:pointer;line-height:1.65}.material-variant summary small{display:block;color:var(--muted);font-weight:400;margin-left:16px}
+.material-variant-scope{font-size:12px;color:var(--pine);padding:6px 8px;background:var(--mint);border-radius:4px}
+.material-variant-sources .evidence-btn{display:inline-flex}.material-variant-sources{margin-top:8px}
+.material-variant[hidden]{display:none!important}
+@media(max-width:620px){.school-entry-bar{gap:6px}.entry-switch button{padding:6px 9px;min-height:38px;font-size:12px}.school-section-links{margin-inline:-4px}.qualification-name-column{width:190px}.qualification-scroll .qualification-matrix tbody th[scope=row]{font-size:13px}.qualification-scroll-tools{padding:6px 10px;flex-wrap:wrap;gap:3px}.qualification-scroll-tools input{max-width:45vw}.qualification-scroll{max-height:65vh}.material-catalog{min-width:440px}.material-catalog th,.material-catalog td{padding:6px 10px}.material-catalog .material-group-button{font-size:13px}.material-category-column{width:42%}.material-project-filter select{font-size:12px}}
 @media(max-width:900px){.project-drawer{width:calc(100vw - 24px)}.school-overview-nav{border-radius:6px}}
-@media(max-width:620px){.school-overview-nav{margin-inline:-4px}.school-detail>.detail-section,.school-projects{scroll-margin-top:124px}.school-projects .search{width:100%}.school-project-scroll.many-projects{max-height:370px}.school-projects .toolbar{gap:7px}.school-controls{gap:7px}.school-section-placeholder{min-height:220px}.qualification-overview-name{width:220px}.project-drawer{width:100vw}.project-drawer-head{padding:12px}.project-drawer-head h2{font-size:16px}.project-drawer-body{padding:12px 8px}.project-drawer .program-title{padding:14px}.project-drawer .program-title h1{font-size:20px}}
+@media(max-width:620px){.school-overview-nav{margin-inline:-4px}.school-detail>.detail-section,.school-projects{scroll-margin-top:180px}.school-projects .search{width:100%}.school-project-scroll.many-projects{max-height:370px}.school-projects .toolbar{gap:7px}.school-controls{gap:7px}.school-section-placeholder{min-height:220px}.qualification-overview-name{width:220px}.project-drawer{width:100vw}.project-drawer-head{padding:12px}.project-drawer-head h2{font-size:16px}.project-drawer-body{padding:12px 8px}.project-drawer .program-title{padding:14px}.project-drawer .program-title h1{font-size:20px}}
 @media(max-width:620px){.qualification-overview{display:block;min-width:0}.qualification-overview>colgroup,.qualification-overview>thead{display:none}.qualification-overview>tbody,.qualification-overview>tbody>tr,.qualification-overview>tbody>tr>th,.qualification-overview>tbody>tr>td{display:block;width:100%}.qualification-overview>tbody>tr>th{border-bottom:0;padding-bottom:3px}.qualification-overview>tbody>tr>td{border-top:0;padding-top:4px}.qualification-variants>summary{flex-wrap:wrap}.qualification-overview>tbody>.qualification-group-heading>th{padding:8px 12px}.qualification-overview .table-wrap{max-width:100%;min-width:0}}

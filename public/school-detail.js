@@ -6,7 +6,8 @@ import { renderLanguageScoreTable } from './score-table.js';
 import { programLabel, schoolViewGroup, languageRequirementText } from './imported-requirement-model.js';
 import { renderStoredRequirements } from './formal-requirements.js';
 import { tuitionText } from './tuition.js';
-import { buildProgramLabels, buildProgramTitles, buildProgramNames, programCode, programEntryLabel, programOriginalTitle, renderProgramScope } from './program-presentation.js';
+import { buildProgramLabels, buildProgramTitles, buildProgramNames, programCode, programEntryLabel, programEntryGroup, entryGroupLabel, programOriginalTitle, renderProgramScope } from './program-presentation.js';
+import { groupMaterials, renderMaterialCatalog } from './material-presentation.js';
 
 export const schoolHref = name => `#school/${encodeURIComponent(name)}`;
 const channelOrder=value=>/一年级|first.year|freshman/i.test(value)?0:/编入|转入|transfer/i.test(value)?2:1;
@@ -58,6 +59,7 @@ export function buildSchoolView(programs) {
     formats: groupRequirements(programs, p => views.get(p.id).languageFormats.map(row => ({ ...row, source: views.get(p.id).sourceFor(row) })).concat(p.semanticVersion===1&&p.languagePolicy.excludedFormats.length?[{topic:'不接受的考试形式',detail:p.languagePolicy.excludedFormats.join('、'),source:p.languagePolicy.source}]:[]), ruleKey),
     waivers: groupRequirements(programs, fromView('waivers'), row => [row.title, row.paragraphs]),
     materials: groupRequirements(programs, fromView('materials'), row => [row.id, row.label, Boolean(row.optional), row.when, row.parts]),
+    materialGroups: groupMaterials(programs, fromView('materials')),
     materialNotes: groupRequirements(programs, p => [{ parts: views.get(p.id).materialNotes, sources: views.get(p.id).materialNoteSources }], row => row.parts),
     post: groupRequirements(programs, p => views.get(p.id).post.map(row => ({ ...row, source: views.get(p.id).sourceFor(row) })), ruleKey),
     selection: groupRequirements(programs, p => [{ ...p.interview }], row => [row.status, row.detail]),
@@ -72,14 +74,18 @@ export function schoolYearPrograms(name, allPrograms, filters = {}) {
   const schoolPrograms = allPrograms.filter(p => p.school === name);
   const years = [...new Set(schoolPrograms.map(p => p.year))].sort((a, b) => b - a);
   const year = years.includes(Number(filters.year)) ? Number(filters.year) : years[0];
-  const programs = schoolPrograms.filter(p => p.year === year).sort((a,b)=>channelOrder(a.channel)-channelOrder(b.channel)||a.name.localeCompare(b.name,'zh-CN')||a.channel.localeCompare(b.channel,'zh-CN'));
-  return { years, year, programs };
+  const yearPrograms = schoolPrograms.filter(p => p.year === year).sort((a,b)=>channelOrder(a.channel)-channelOrder(b.channel)||a.name.localeCompare(b.name,'zh-CN')||a.channel.localeCompare(b.channel,'zh-CN'));
+  const entryGroup = filters.entryGroup === 'transfer' ? 'transfer' : 'application';
+  const counts = { application:0, transfer:0 };
+  yearPrograms.forEach(p=>counts[programEntryGroup(p)]++);
+  return { years, year, entryGroup, counts, programs:yearPrograms.filter(p=>programEntryGroup(p)===entryGroup) };
 }
 
 export function createSchoolOverview(name, allPrograms, ui, filters = {}) {
   const { esc, icon, button, evidence, showSources = false, selectedCompare = new Set() } = ui;
-  const { years, year, programs } = schoolYearPrograms(name, allPrograms, filters);
-  if (!programs.length) return { html:'<div class="empty">尚未收录该学校的项目。</div>', programs, renderSection:()=>'' };
+  const { years, year, programs, entryGroup, counts } = schoolYearPrograms(name, allPrograms, filters);
+  if (!years.length) return { html:'<div class="empty">尚未收录该学校的项目。</div>', programs, renderSection:()=>'' };
+  const groupName = entryGroupLabel(entryGroup);
   const labels = buildProgramLabels(programs);
   const titles = buildProgramTitles(programs), rowTitles=buildProgramTitles(programs,{contextual:false});
   const infoStore = new Map();
@@ -94,7 +100,7 @@ export function createSchoolOverview(name, allPrograms, ui, filters = {}) {
   ui.programScope = applies;
   const hint = (label, parts) => renderInfoHint(label, parts, esc);
   const ruleRows = rows => rows.map(row => `<div class="school-rule"><strong>${esc(row.topic || row.title)}</strong><div>${esc(row.detail)} ${refs(row.sources)}</div><div>${applies(row.programs)}</div></div>`).join('');
-  const nav = [['academic', '学历资格与身份'], ['language', '语言考试与豁免'], ['materials', '申请材料'], ['rounds', '申请轮次'], ['after', '后续要求'],...(programs.some(p=>p.semanticVersion===1)?[['complete','完整条款']]:[])];
+  const nav = programs.length ? [['academic', '学历资格与身份'], ['language', '语言考试与豁免'], ['materials', '申请材料'], ['rounds', '申请轮次'], ['after', '后续要求'],...(programs.some(p=>p.semanticVersion===1)?[['complete','完整条款']]:[])] : [];
   const sourceIds = [...new Set(programs.flatMap(p => p.sourceIds || []))];
   const documents = sourceIds.map(id => ui.documents?.find(d => d.id === id) || { id, name: id });
   const schoolLink = schoolHref(name);
@@ -104,24 +110,25 @@ export function createSchoolOverview(name, allPrograms, ui, filters = {}) {
     view ||= buildSchoolView(programs);
     if (key === 'academic') return `<section class="panel section detail-section" id="detail-academic"><div class="panel-head"><h2>学历资格与身份</h2><span class="muted small">按持有的学制、认证或文凭查看适用项目</span></div>${renderQualificationMatrix(programs, allPrograms, ui)}${view.academic.length ? programs.length>8 ? `<details class="school-academic-notes"><summary>身份与项目附加条件（${view.academic.length} 组）</summary><div>${ruleRows(view.academic)}</div></details>` : `<div class="panel-body academic-notes">${ruleRows(view.academic)}</div>` : ''}</section>`;
     if (key === 'language') return `<section class="panel section detail-section" id="detail-language"><div class="panel-head"><div class="language-heading"><h2>语言考试与豁免</h2><span class="score-legend muted small">“未注明”表示原文未列明门槛；“—”表示不适用。</span></div><span class="muted small">按各项右侧适用项目核对 · 总分及单项同时满足</span></div>${renderLanguageScoreTable(view.scores, ui, applies)}<div class="language-rules-heading"><h3>成绩有效期与考试形式</h3></div><div class="panel-body language-rules-body">${ruleRows(view.languageRequirements)}${view.validity.map(row => `<div class="school-rule"><strong>成绩有效期</strong><div>${row.displayDetail?esc(row.displayDetail):`所选申请截止日前 ${esc(row.validYears)} 年内参加${row.availabilityRequired ? '，且成绩在申请期间可获得' : ''}。`}${refs(row.sources)}</div><div>${applies(row.programs)}</div></div>`).join('')}<div class="language-formats">${ruleRows(view.formats)}</div><div class="waiver-list">${view.waivers.map(row => `<div class="waiver-summary"><div class="waiver-label"><h3>${esc(row.title)}</h3>${hint(row.title + ' · ' + row.programs.map(label).join(' / '), row.paragraphs.map(text => ({ text })))}</div><span class="source-links">${refs(row.sources)}</span><div class="waiver-scope">${applies(row.programs)}</div></div>`).join('')}</div></div></section>`;
-    if (key === 'materials') return `<section class="panel section detail-section" id="detail-materials"><div class="panel-head"><h2>申请材料</h2><span class="muted small">名称旁 ⓘ 查看完整说明</span></div><div class="table-wrap"><table class="school-material-table"><thead><tr><th>材料</th><th>适用项目</th></tr></thead><tbody>${view.materials.map(row => `<tr><td><span>${esc(row.label)}</span>${row.optional ? '<small class="material-optional">选交</small>' : ''}${hint(row.label + ' · ' + row.programs.map(label).join(' / '), row.parts)}<span class="source-links">${refs(row.sources)}</span></td><td>${applies(row.programs)}</td></tr>`).join('')}</tbody></table></div><div class="material-common-notes">${view.materialNotes.filter(row => row.parts?.length).map(row => `<div><strong>材料通用说明</strong>${hint('材料通用说明 · ' + row.programs.map(label).join(' / '), row.parts)}${applies(row.programs)}<span class="source-links">${refs(row.sources)}</span></div>`).join('')}</div></section>`;
+    if (key === 'materials') return `<section class="panel section detail-section" id="detail-materials"><div class="panel-head"><h2>申请材料</h2><span class="muted small">同类材料合并为 ${view.materialGroups.length} 类 · 点击查看各项目要求</span></div>${renderMaterialCatalog(view.materialGroups,programs,ui)}<div class="material-common-notes">${view.materialNotes.filter(row => row.parts?.length).map(row => `<div><strong>材料通用说明</strong>${hint('材料通用说明 · ' + row.programs.map(label).join(' / '), row.parts)}${applies(row.programs)}<span class="source-links">${refs(row.sources)}</span></div>`).join('')}</div></section>`;
     if (key === 'rounds') return `<section class="panel section detail-section" id="detail-rounds"><div class="panel-head"><h2>申请轮次</h2><span class="muted small">各项目的申请与入学节点分别列出</span></div><div class="panel-body school-rounds-intro">${view.selection.map(row => `<div class="school-rule"><strong>选拔方式</strong><div>${esc(row.detail)} ${refs(row.sources)}</div><div>${applies(row.programs)}</div></div>`).join('')}${view.enrollment.map(row => `<div class="school-rule"><strong>资格取得节点</strong><div>${esc(row.detail)} ${refs(row.sources)}</div><div>${applies(row.programs)}</div></div>`).join('')}</div>${renderRoundsTable(programs, ui)}<div class="panel-body rounds-footer">${view.tuition.map(row => `<div class="school-rule"><strong>学费</strong><div>${esc(tuitionText(row,row.year))}${refs(row.sources)}</div><div>${applies(row.programs)}</div></div>`).join('')}${view.combination.map(row => `<div class="school-rule"><strong>多项目／跨轮申请</strong><div>并申：${row.parallel === 'allowed' ? '允许' : row.parallel === 'forbidden' ? '不允许' : '未注明'}；跨轮重申：${row.reapply === 'allowed' ? '允许' : row.reapply === 'forbidden' ? '不允许' : '未注明'}。${esc(row.materials)}。${esc(row.referenceReuse)}。${refs(row.sources)}</div><div>${applies(row.programs)}</div></div>`).join('')}</div></section>`;
     return `<section class="panel section detail-section" id="detail-after"><div class="panel-head"><h2>后续阶段的相关要求</h2><span class="muted small">按实际适用项目列出</span></div><div class="panel-body">${view.post.length?ruleRows(view.post.map(row => ({ ...row, topic: `${row.stage} · ${row.topic}` }))):'<p class="muted">已收录资料中未单独列明后续要求，请结合完整原文核对。</p>'}</div></section>`;
   };
   const placeholders = nav.map(([key,title])=>`<section class="panel section detail-section school-section-placeholder" id="detail-${key}" data-school-section="${key}"><div class="panel-head"><h2>${title}</h2></div><div class="panel-body"><button type="button" class="btn sm" data-load-school-section="${key}">${key==='complete'?'展开完整条款':'查看'+title}</button></div></section>`).join('');
   const sourceLinks = documents.map(d => `<a class="btn ghost sm" href="${d.id === 'aohb27' ? '/sources/aohb27.pdf' : '/uploads/' + encodeURIComponent(d.id)}" target="_blank" rel="noopener">${documents.length === 1 ? '完整原文' : esc(d.name)} ${icon('eye')}</a>`).join('');
-  const html = `<div class="school-detail" data-school-name="${esc(name)}" data-school-year-value="${year}">
+  const entrySwitch = `<div class="school-entry-bar"><a class="school-projects-label" href="${schoolLink}" data-school-section-link="projects">项目</a><div class="entry-switch" role="group" aria-label="切换申请项目与编入项目">${['application','transfer'].map(group=>`<button type="button" data-school-entry="${group}" aria-pressed="${group===entryGroup}">${entryGroupLabel(group)} <span>${counts[group]}</span></button>`).join('')}</div></div>`;
+  const html = `<div class="school-detail" data-school-name="${esc(name)}" data-school-year-value="${year}" data-entry-group="${entryGroup}">
     <div class="hierarchy-breadcrumb"><a href="#programs">学校与项目</a>${icon('chevron')}<span>${esc(name)}</span></div>
-    <section class="panel section school-heading"><div class="school-title"><div><h1>${esc(name)}</h1><p>${year} 入学 · 全部 ${programs.length} 个项目集中查看</p></div><div class="school-controls"><label>入学年份<select data-school-year>${years.map(value => `<option value="${value}" ${value === year ? 'selected' : ''}>${value} 年</option>`).join('')}</select></label>${button(icon('compare') + ' 比较所选项目 <span data-compare-count>'+selectedCompare.size+'</span>', 'compare-programs', '', 'sm')}${button('清空选择','clear-compare','','ghost sm')}</div></div>
+    <section class="panel section school-heading"><div class="school-title"><div><h1>${esc(name)}</h1><p>${year} 入学 · ${groupName} ${programs.length} 个</p></div><div class="school-controls"><label>入学年份<select data-school-year>${years.map(value => `<option value="${value}" ${value === year ? 'selected' : ''}>${value} 年</option>`).join('')}</select></label>${programs.length?button(icon('compare') + ' 比较所选项目 <span data-compare-count>'+programs.filter(p=>selectedCompare.has(p.id)).length+'</span>', 'compare-programs', '', 'sm')+button('清空选择','clear-compare','','ghost sm'):''}</div></div>
     </section>
-    <nav class="rule-nav school-overview-nav" aria-label="学校要求导航"><a href="${schoolLink}" data-school-section-link="projects">全部项目</a>${nav.map(([key, title]) => `<a href="${schoolLink}/${key}" data-school-section-link="${key}">${title}</a>`).join('')}</nav>
-    <section class="panel section school-projects" id="detail-projects"><div class="toolbar"><label class="search">${icon('search')}<input data-school-project-search aria-label="搜索本校项目" placeholder="搜索项目、专业或申请类型"></label><span class="muted small" data-school-project-count>全部 ${programs.length} 个项目${programs.length>8?' · 列表内可滚动查看':''}</span></div>
+    <nav class="rule-nav school-overview-nav" aria-label="学校要求导航">${entrySwitch}<div class="school-section-links">${nav.map(([key, title]) => `<a href="${schoolLink}/${key}" data-school-section-link="${key}">${title}</a>`).join('')}</div></nav>
+    ${programs.length?`<section class="panel section school-projects" id="detail-projects"><div class="toolbar"><label class="search">${icon('search')}<input data-school-project-search aria-label="搜索本校项目" placeholder="搜索项目、专业或申请类型"></label><span class="muted small" data-school-project-count>全部 ${programs.length} 个${groupName}${programs.length>8?' · 列表内可滚动查看':''}</span></div>
       <div class="table-wrap school-project-scroll ${programs.length>8?'many-projects':''}" tabindex="0" aria-label="本年度全部项目列表"><table class="school-program-table"><thead><tr><th>项目</th><th>申请类型</th><th>入学期</th><th>版本</th><th>比较</th></tr></thead><tbody>${programs.map(p => `<tr data-school-project="${esc([p.name,p.code,p.englishName,p.direction,p.channel,programEntryLabel(p),rowTitles.get(p.id),label(p.id)].join(' ').toLowerCase())}"><td><a class="school-project-link" href="#program/${esc(p.id)}" title="${esc(programOriginalTitle(p))}"><span>${esc(rowTitles.get(p.id))}</span>${icon('chevron')}</a></td><td><span class="project-entry" title="${esc(p.channel)}">${esc(programEntryLabel(p))}</span></td><td>${[...new Set(p.rounds.map(r => r.intake))].map(esc).join(' / ')}</td><td>v${esc(p.version)}</td><td><input type="checkbox" data-compare="${esc(p.id)}" aria-label="比较${esc(label(p.id))}" ${selectedCompare.has(p.id) ? 'checked' : ''}></td></tr>`).join('')}</tbody></table></div><p class="school-project-empty hidden">没有找到项目；清空搜索可查看本年度全部项目。</p>
-      <div class="source-panel"><div class="source-summary"><strong>原文与版本</strong><span>点项目查看独立要求；下方总览始终涵盖本年度全部项目。</span></div><div class="source-actions"><button type="button" class="source-switch" role="switch" aria-checked="${showSources}" data-act="toggle-sources"><span>显示详细原文链接</span><span class="switch-track" aria-hidden="true"></span></button>${documents.length>2?`<details class="school-source-list"><summary>完整原文（${documents.length} 份）</summary><div>${sourceLinks}</div></details>`:sourceLinks}</div></div>
-    </section>
+      <div class="source-panel"><div class="source-summary"><strong>原文与版本</strong><span>下方全部内容对应当前 ${programs.length} 个${groupName}。</span></div><div class="source-actions"><button type="button" class="source-switch" role="switch" aria-checked="${showSources}" data-act="toggle-sources"><span>显示详细原文链接</span><span class="switch-track" aria-hidden="true"></span></button>${documents.length>2?`<details class="school-source-list"><summary>完整原文（${documents.length} 份）</summary><div>${sourceLinks}</div></details>`:sourceLinks}</div></div>
+    </section>`:`<section class="panel section" id="detail-projects"><div class="empty"><strong>${year} 年尚未收录${groupName}</strong><p>可切换到${entryGroupLabel(entryGroup==='transfer'?'application':'transfer')}，或查看其他入学年份。</p></div></section>`}
     ${ui.deferSections?placeholders:nav.map(([key])=>renderSection(key)).join('')}
   </div>`;
-  return { html, programs, labels, titles, renderSection, resolveInfo };
+  return { html, programs, labels, titles, entryGroup, renderSection, resolveInfo };
 }
 
 export function renderSchoolDetail(name, allPrograms, ui, filters = {}) {
