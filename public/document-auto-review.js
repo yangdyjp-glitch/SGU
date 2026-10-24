@@ -1,7 +1,8 @@
 import { admissionLabels, renderAdmissionContent, readableAdmissionValue, sourceLink } from './admissions-content.js';
+import { filterReviewDoubts } from './document-doubts.js';
 
 export function renderAutoReview(d,ui){
- const {esc,button}=ui,review=d.autoReview;
+ const {esc,button}=ui,review=filterReviewDoubts(d.autoReview);
  if(d.status==='published')return `<div class="note section"><strong>已整体确认入库</strong><p>${esc(d.confirmedBy)} 已确认 ${d.linkedPrograms.length} 个项目。完整规则、原文出处及版本已保存。</p></div><div class="stack">${review.entries.map(({program:p})=>`<a class="btn" href="#program/${esc(p.id)}" data-act="open-published-program">${esc(p.school)} · ${esc(p.name)}</a>`).join('')}</div>`;
  if(d.status==='needs_configuration')return `<div class="note section">原文件已保留。管理员在<a href="#settings" data-act="open-settings" class="link">团队设置</a>保存 OpenAI 密钥后会自动继续整理，无须重新上传。</div>`;
  if(d.status!=='review'||!review)return '';
