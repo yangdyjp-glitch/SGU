@@ -34,6 +34,8 @@ flowchart TD
 
 `program`是某学校／项目／招生通道／年度的规则集合，包含其申请轮次。页面短编号是数据库唯一标识；下一年度或另一通道使用新编号，例如`GLA-2028`，不会覆盖2027。
 
+学校浏览页以学校＋年度组织全部项目，不再以招生通道筛选。`program-presentation.js`仅生成展示标签和可展开的适用项目名单，后台 `channel` 继续用于规则身份、上传关联、匹配及历史。`school-detail.js`生成年度总览和各要求分区，`school-overview.js`负责分区按需呈现、页内导航和项目列表搜索；`project-drawer.js`复用项目详情模板并隔离对话框焦点及滚动。超过8个项目时，资格表改为按共同目录展开具体条件与适用项目；完整条件必须完全一致才合并展示，原项目对象不修改。
+
 规则包含学历路径`paths`、项目通用`hardConditions`、多份语言考试门槛`language`、豁免路径`waivers`、轮次`rounds`、材料`materials`、学费`tuition`及组合申请`combination`。每条可判断条件保留来源文件、页码、引用及规则编号。
 
 数据库表为users、sessions、students、programs、versions、matches、events、documents与meta；共享模式另用files保存原文件和提取文本、settings保存后端模型配置。配置DATABASE_URL时，异步存储适配器直连PostgreSQL（Supabase私有sgu schema）；未配置时兼容原SQLite，不另建同步副本。当前版本更新、不可变版本插入及审计事件在同一事务内提交。写入必须带前一次读取的版本号；不匹配返回409及服务器当前版本，前端展示差异。PostgreSQL通过事务级advisory lock串行化跨实例写入，SQLite通过异步队列持有BEGIN IMMEDIATE直至提交。

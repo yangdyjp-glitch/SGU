@@ -125,14 +125,18 @@ test('certification deduplication keeps each program scope even when path ids ov
   for(const p of programs)for(const path of p.paths)assert.ok(rows.some(r=>r.cells.some(c=>c.programId===p.id&&c.pathIds.includes(path.id))));
 });
 
-test('default first-year and explicit transfer channels cannot mix their qualifications', () => {
+test('first-year and transfer projects share one overview while keeping separate qualifications', () => {
   const first=imported('AI-first'),transfer=imported('AI-transfer','三年级编入（材料审查）');
   first.paths[0].all[0].label='一年级专属条件';transfer.paths[0].all[0].label='编入专属条件';
   const all=[transfer,first];
   const initial=renderSchoolDetail(first.school,all,ui);
-  assert.match(initial,/一年级专属条件/);assert.doesNotMatch(initial,/编入专属条件/);
+  assert.match(initial,/一年级专属条件/);assert.match(initial,/编入专属条件/);
   const selected=renderSchoolDetail(first.school,all,ui,{channel:transfer.channel});
-  assert.match(selected,/编入专属条件/);assert.doesNotMatch(selected,/一年级专属条件/);
+  assert.equal(selected,initial,'legacy channel filters must no longer hide projects');
+  assert.doesNotMatch(selected,/data-school-channel/);
+  assert.match(selected,/FLA · 一年级申请/);assert.match(selected,/FLA · 三年级编入/);
+  assert.doesNotMatch(renderProjectDetail(first,ui),/编入专属条件/);
+  assert.doesNotMatch(renderProjectDetail(transfer,ui),/一年级专属条件/);
 });
 
 test('Sophia FLA application and transfer are two visible projects with separate rules and stable identities', () => {

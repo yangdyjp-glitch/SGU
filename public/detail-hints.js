@@ -3,6 +3,12 @@ export function renderInfoHint(label, parts, esc) {
   return `<button type="button" class="info-hint" data-act="detail-info" data-info="${esc(JSON.stringify({ label, parts }))}" aria-label="查看${esc(label)}说明" aria-haspopup="dialog"><span aria-hidden="true">i</span></button>`;
 }
 
+// Long school matrices resolve detailed evidence on interaction, rather than
+// repeating the same source quotations in hundreds of HTML attributes.
+export function detailInfoAttribute(getInfo, ui) {
+  return ui.registerInfo ? `data-info-key="${ui.esc(ui.registerInfo(getInfo))}"` : `data-info="${ui.esc(JSON.stringify(getInfo()))}"`;
+}
+
 // Ordinary hints retain their text layout; qualification hints show each
 // underlying type and its evidence without turning an unknown into a rejection.
 export function renderDetailInfoContent(info, esc, evidence = () => '') {

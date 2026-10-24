@@ -11,6 +11,7 @@ export { buildProjectView, pathDescription } from './requirement-model.js';
 
 export function renderProjectDetail(p, ui) {
   const { esc, icon, tag, button, evidence, showSources = false } = ui;
+  const displayLabel=ui.programLabel||programLabel;
   const view = buildProjectView(p);
   const sourceLinks = (p.sourceIds || []).map(id => `<a class="btn ghost sm" href="${documentUrl(id)}" target="_blank" rel="noopener">${p.sourceIds.length === 1 ? '完整原文' : esc(ui.documents?.find(d => d.id === id)?.name || id)} ${icon('eye')}</a>`).join('');
   const refs = sources => {
@@ -20,9 +21,9 @@ export function renderProjectDetail(p, ui) {
   const hint = (label, parts) => renderInfoHint(label, parts, esc);
   const compactRows = rows => rows.map(r => `<div class="compact-rule"><strong>${esc(r.topic)}</strong><div>${esc(r.detail)} ${evidence(view.sourceFor(r))}</div></div>`).join('');
   const nav = [['academic', '学历与资格'], ['language', '语言成绩'], ['materials', '申请材料'], ['rounds', '申请轮次'], ...(view.post.length ? [['after', '后续要求']] : []),...(p.semanticVersion===1?[['complete','完整条款']]:[])];
-  return `<div class="project-detail"><div class="hierarchy-breadcrumb"><a href="#programs">学校与项目</a>${icon('chevron')}<a href="#school/${encodeURIComponent(p.school)}">${esc(p.school)}</a>${icon('chevron')}<span>${esc(programLabel(p))}</span></div>
+  return `<div class="project-detail"><div class="hierarchy-breadcrumb"><a href="#programs">学校与项目</a>${icon('chevron')}<a href="#school/${encodeURIComponent(p.school)}">${esc(p.school)}</a>${icon('chevron')}<span>${esc(displayLabel(p))}</span></div>
     <section class="panel section project-heading-panel">
-      <div class="program-title"><div><div class="flex wrap">${tag(p.school)}${tag(p.year + ' 入学')}${tag(p.degree)}</div><h1>${esc(programLabel(p))} · ${esc(p.name)}</h1><p class="english">${esc(p.englishName)}</p><p class="muted small">${esc(p.channel)}${p.partner ? ' · 合作院校：' + esc(p.partner) : ''}</p></div><div class="project-actions">${button(icon('edit') + ' 编辑规则', 'edit-program', `data-id="${p.id}"`)}${button('选择学生检查', 'select-student', `data-id="${p.id}"`, 'primary')}</div></div>
+      <div class="program-title"><div><div class="flex wrap">${tag(p.school)}${tag(p.year + ' 入学')}${tag(p.degree)}</div><h1>${esc(displayLabel(p))} · ${esc(p.name)}</h1><p class="english">${esc(p.englishName)}</p><p class="muted small">${esc(p.channel)}${p.partner ? ' · 合作院校：' + esc(p.partner) : ''}</p></div><div class="project-actions">${button(icon('edit') + ' 编辑规则', 'edit-program', `data-id="${p.id}"`)}${button('选择学生检查', 'select-student', `data-id="${p.id}"`, 'primary')}</div></div>
       <div class="source-panel detail-section" id="detail-sources"><div class="source-summary"><strong>原文与版本</strong><span>${esc(p.year)} 招生手册 · v${esc(p.version)}</span><span class="source-audience">${esc(view.audience)}</span></div><div class="source-actions"><button type="button" class="source-switch" role="switch" aria-checked="${showSources}" data-act="toggle-sources"><span>显示详细原文链接</span><span class="switch-track" aria-hidden="true"></span></button>${sourceLinks}${button('修改记录', 'program-history', `data-id="${p.id}"`, 'ghost sm')}</div></div>
       <nav class="rule-nav" aria-label="项目要求导航">${nav.map(([key, label]) => `<a href="#program/${p.id}/${key}">${label}</a>`).join('')}</nav>
     </section>
@@ -36,17 +37,18 @@ export function renderProjectDetail(p, ui) {
 }
 
 
-export function setupDetailHints({ esc, showModal, evidence }) {
+export function setupDetailHints({ esc, showModal, evidence, resolveInfo }) {
   const tooltip = document.createElement('div');
   tooltip.id = 'detail-tooltip'; tooltip.className = 'detail-tooltip'; tooltip.role = 'tooltip'; tooltip.hidden = true;
   document.body.append(tooltip);
   let active = null, timer;
   const content = info => renderDetailInfoContent(info, esc, evidence);
+  const read = button => button.dataset.info ? JSON.parse(button.dataset.info) : resolveInfo?.(button.dataset.infoKey);
   function hide() { clearTimeout(timer); tooltip.hidden = true; active?.removeAttribute('aria-describedby'); active = null; }
   function show(button) {
     clearTimeout(timer); if (active === button && !tooltip.hidden) return;
     hide(); active = button;
-    const info = JSON.parse(button.dataset.info);
+    const info = read(button); if(!info){hide();return;}
     tooltip.classList.toggle('qualification-tooltip', info.parts.some(part => part.rows));
     tooltip.innerHTML = content(info) + `<small class="hint-footer">${button.closest('#student-form')?'移开或按 Esc 关闭提示':'点击标识可展开完整说明'}</small>`;
     tooltip.style.maxHeight = ''; tooltip.hidden = false; button.setAttribute('aria-describedby', tooltip.id);
@@ -62,7 +64,7 @@ export function setupDetailHints({ esc, showModal, evidence }) {
   document.addEventListener('pointerover', e => { const button = e.target.closest('.info-hint'); if (button) show(button); else if (tooltip.contains(e.target)) clearTimeout(timer); });
   document.addEventListener('pointerout', e => { if (e.target.closest('.info-hint') || tooltip.contains(e.target)) timer = setTimeout(() => { if (!tooltip.matches(':hover') && !active?.matches(':hover,:focus')) hide(); }, 160); });
   document.addEventListener('focusin', e => { if (e.target.matches('.info-hint')) show(e.target); else if (!tooltip.contains(e.target)) hide(); });
-  document.addEventListener('click', e => { const button = e.target.closest('.info-hint'); if (button) { if(button.closest('#student-form')){e.preventDefault();show(button);return;}const info = JSON.parse(button.dataset.info); hide(); showModal(info.label, `<div class="material-explanation">${content(info)}</div>`); } else if (!tooltip.contains(e.target)) hide(); });
+  document.addEventListener('click', e => { const button = e.target.closest('.info-hint'); if (button) { if(button.closest('#student-form')){e.preventDefault();show(button);return;}const info = read(button); hide(); if(info)showModal(info.label, `<div class="material-explanation">${content(info)}</div>`); } else if (!tooltip.contains(e.target)) hide(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') hide(); });
   document.addEventListener('scroll', e => { if (!tooltip.contains(e.target)) hide(); }, true);
   window.addEventListener('hashchange', hide);

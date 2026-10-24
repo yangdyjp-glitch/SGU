@@ -120,7 +120,7 @@ test('all eleven rounds retain independent first-screen, interview and final col
   }
 });
 
-test('school overview isolates admission year/channel and keeps school-to-project navigation', () => {
+test('school overview isolates admission year and keeps school-to-project navigation', () => {
   const next = structuredClone(programs[0]); next.id = 'GLA-2028'; next.year = 2028; next.name = '下一年度项目'; next.language[0].score = 123;
   const all = [...programs, next];
   const html = renderSchoolDetail('立命馆大学', all, ui, { year: 2027 });

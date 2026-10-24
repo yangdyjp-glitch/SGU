@@ -1,6 +1,7 @@
 import { buildProjectView, pathDescription } from './requirement-model.js';
-import { renderInfoHint } from './detail-hints.js';
+import { renderInfoHint, detailInfoAttribute } from './detail-hints.js';
 import { programLabel } from './imported-requirement-model.js';
+import { renderProgramScope } from './program-presentation.js';
 import { baseQualifications, educationGroups, educationDisplayGroups, normalizeName as normal, qualificationVariant, canonicalAccreditor, commonAccreditors, qualificationHint } from './education-model.js';
 import {educationPathTypesFor, educationPathKey, educationLabelKey, qualificationCatalogKey, educationCredentialType, fallbackDisplayGroup, unclassifiedDisplayGroup, extraAccreditorLabel} from './education-catalog.js';
 export { baseQualifications } from './education-model.js';
@@ -260,7 +261,7 @@ export function buildQualificationDisplayRows(programs,allPrograms=programs){
   });
 }
 
-function groupDecisionOptions(cells,full=false){
+export function groupDecisionOptions(cells,full=false){
   const groups=new Map();
   for(const cell of cells){
     const key=JSON.stringify(cell.options.map(option=>[option.id,option.label,option.shortLabel,option.state,...(full?[option.detail,option.notes]:[])]));
@@ -284,8 +285,8 @@ function decisionSummaries(cells){
   }
   return [...groups.values()].sort((a,b)=>Object.keys(decisionLabels).indexOf(a.state)-Object.keys(decisionLabels).indexOf(b.state));
 }
-export function buildQualificationDecisionInfo(row,programs,programId){
-  const label=id=>programLabel(programs.find(program=>program.id===id)||{id});
+export function buildQualificationDecisionInfo(row,programs,programId,displayLabel=programLabel){
+  const label=id=>displayLabel(programs.find(program=>program.id===id)||{id});
   const cells=programId?row.cells.filter(cell=>cell.programId===programId):row.cells;
   const groups=groupDecisionOptions(cells,true);
   const hints=[...qualificationHint(row),...(row.originalLabels?.length?[{text:'原始路径名称：'+row.originalLabels.join('；')}]:[])];
@@ -303,9 +304,11 @@ function resultFor(options){
 
 export function renderQualificationMatrix(programs, allPrograms, ui) {
   const { esc, evidence } = ui;
-  const label=id=>programLabel(programs.find(p=>p.id===id)||{id});
+  const displayLabel=ui.programLabel||programLabel;
+  const label=id=>displayLabel(programs.find(p=>p.id===id)||{id});
   const rows = buildQualificationDisplayRows(programs, allPrograms);
-  const programWidths=programs.map(program=>Math.max(56,[...programLabel(program)].reduce((width,char)=>width+(/[^\u0000-\u007f]/.test(char)?13:8),16)));
+  if (programs.length > 8) return renderCompactQualifications(rows, programs, ui);
+  const programWidths=programs.map(program=>Math.min(160,Math.max(56,[...displayLabel(program)].reduce((width,char)=>width+(/[^\u0000-\u007f]/.test(char)?13:8),16))));
   const refs = sources => [...new Map(sources.map(source => [JSON.stringify(source), source])).values()].map(evidence).join(' ');
   const scopePrefix = group => {
     if(group.programs.length===programs.length)return '';
@@ -318,10 +321,10 @@ export function renderQualificationMatrix(programs, allPrograms, ui) {
     const fullInSummary=group.programs.every(id=>row.cells.find(cell=>cell.programId===id).scopeSummary.startsWith('完整 A-Level；'));
     return (fullInSummary?'':'完整资格；')+'预计取得须核对入学节点。';
   };
-  const infoButton=(info,classes,content,accessible)=>`<button type="button" class="info-hint ${classes}" data-act="detail-info" data-info="${esc(JSON.stringify(info))}" aria-label="${esc(accessible)}" aria-haspopup="dialog">${content}</button>`;
-  const rowHint=row=>infoButton(buildQualificationDecisionInfo(row,programs),'qualification-hint','<span aria-hidden="true">!</span>','查看'+row.label+'包含的资格及适用范围');
+  const infoButton=(getInfo,classes,content,accessible)=>`<button type="button" class="info-hint ${classes}" data-act="detail-info" ${detailInfoAttribute(getInfo,ui)} aria-label="${esc(accessible)}" aria-haspopup="dialog">${content}</button>`;
+  const rowHint=row=>infoButton(()=>buildQualificationDecisionInfo(row,programs,undefined,displayLabel),'qualification-hint','<span aria-hidden="true">!</span>','查看'+row.label+'包含的资格及适用范围');
   const resultCell=(row,cell)=>{
-    const result=resultFor(cell.options),info=buildQualificationDecisionInfo(row,programs,cell.programId);
+    const result=resultFor(cell.options),info=()=>buildQualificationDecisionInfo(row,programs,cell.programId,displayLabel);
     const title=cell.options.map(option=>decisionLabels[option.state]+'：'+option.label).join('；');
     return `<td class="acceptance-cell" title="${esc(title)}">${infoButton(info,'qualification-status qualification-result '+result.state,esc(result.text),label(cell.programId)+'：'+result.text+'，查看各类型结论')}</td>`;
   };
@@ -339,8 +342,31 @@ export function renderQualificationMatrix(programs, allPrograms, ui) {
     const groups=row.conditions.map(group=>`<span class="qualification-condition">${!row.members&&scopePrefix(group)?`<strong class="inline-programs">${esc(scopePrefix(group))}</strong>`:''}${esc(conditionText(row,group))}${renderInfoHint(row.label+' · '+group.programs.map(label).join(' / '),group.backgroundNotes,esc)} ${refs(group.sources)}</span>`).join(' ');
     return [decisions,groups].filter(Boolean).join(' ');
   };
-  const conditionLine=row=>`<span class="qualification-conditions-line"><span class="qualification-conditions-text">${conditions(row)}</span>${infoButton(buildQualificationDecisionInfo(row,programs),'qualification-hint qualification-notes-hint','<span aria-hidden="true">!</span>','查看'+row.label+'的完整附加条件与适用说明')}</span>`;
+  const conditionLine=row=>`<span class="qualification-conditions-line"><span class="qualification-conditions-text">${conditions(row)}</span>${infoButton(()=>buildQualificationDecisionInfo(row,programs,undefined,displayLabel),'qualification-hint qualification-notes-hint','<span aria-hidden="true">!</span>','查看'+row.label+'的完整附加条件与适用说明')}</span>`;
   return `<div class="qualification-tools"><label class="search">${ui.icon('search')}<input data-qualification-search aria-label="搜索学制或资格" placeholder="搜索学制、认证或文凭，如 IB、WASC、DSE"></label><span class="muted small">${rows.length} 项统一资格</span></div>
-    <div class="table-wrap"><table class="qualification-matrix" style="--qualification-min-width:${Math.max(680,600+programWidths.reduce((sum,width)=>sum+width,0))}px"><colgroup><col class="qualification-name-column">${programWidths.map(width=>`<col class="qualification-program-column" style="width:${width}px">`).join('')}<col></colgroup><thead><tr><th scope="col">学制／资格</th>${programs.map(p => `<th scope="col" class="acceptance-column"><a href="#program/${esc(p.id)}">${esc(programLabel(p))}</a></th>`).join('')}<th scope="col">附加条件与适用说明</th></tr></thead>${educationGroups.map(group=>`<tbody data-qualification-group="${group.id}"><tr class="qualification-group-heading"><th colspan="${programs.length+2}">${group.label}</th></tr>${rows.filter(row=>row.group===group.id).map(row => `<tr data-qualification="${esc(row.id)}" data-qualification-label="${esc([row.label,...row.values||[],...row.originalLabels||[]].join(' ').toLowerCase())}"><th scope="row">${esc(row.label)}${rowHint(row)}</th>${row.cells.map(cell=>resultCell(row,cell)).join('')}<td class="qualification-conditions">${conditionLine(row)}</td></tr>`).join('')}</tbody>`).join('')}</table></div>
+    <div class="table-wrap"><table class="qualification-matrix" style="--qualification-min-width:${Math.max(680,600+programWidths.reduce((sum,width)=>sum+width,0))}px"><colgroup><col class="qualification-name-column">${programWidths.map(width=>`<col class="qualification-program-column" style="width:${width}px">`).join('')}<col></colgroup><thead><tr><th scope="col">学制／资格</th>${programs.map(p => `<th scope="col" class="acceptance-column"><a href="#program/${esc(p.id)}">${esc(displayLabel(p))}</a></th>`).join('')}<th scope="col">附加条件与适用说明</th></tr></thead>${educationGroups.map(group=>`<tbody data-qualification-group="${group.id}"><tr class="qualification-group-heading"><th colspan="${programs.length+2}">${group.label}</th></tr>${rows.filter(row=>row.group===group.id).map(row => `<tr data-qualification="${esc(row.id)}" data-qualification-label="${esc([row.label,...row.values||[],...row.originalLabels||[]].join(' ').toLowerCase())}"><th scope="row">${esc(row.label)}${rowHint(row)}</th>${row.cells.map(cell=>resultCell(row,cell)).join('')}<td class="qualification-conditions">${conditionLine(row)}</td></tr>`).join('')}</tbody>`).join('')}</table></div>
     <p class="qualification-legend">可：列明可用，仍须满足条件；N项可：组内有N种可用类型，点击查看；否：明确不接受本项；待核：原文未明确或有冲突。未列明不等于不接受，单项不适用也不妨碍通过其他路径申请。</p><p class="qualification-empty hidden">没有找到该学制或资格。</p>`;
+}
+
+function renderCompactQualifications(rows, programs, ui) {
+  const { esc } = ui, displayLabel=ui.programLabel||programLabel;
+  const applies=ui.programScope||((ids)=>renderProgramScope(ids,programs,ui));
+  const hint=(row,cells,accessible)=>`<button type="button" class="info-hint qualification-hint" data-act="detail-info" ${detailInfoAttribute(()=>buildQualificationDecisionInfo({...row,cells},programs,undefined,displayLabel),ui)} aria-label="${esc(accessible)}" aria-haspopup="dialog"><span aria-hidden="true">!</span></button>`;
+  const renderRow=row=>{
+   const groups=groupDecisionOptions(row.cells,true);
+   const counts={accepted:0,excluded:0,unknown:0};
+   row.cells.forEach(cell=>counts[resultFor(cell.options).state]++);
+   const summary=Object.entries(counts).filter(([,count])=>count).map(([state,count])=>`<span class="qualification-scope-note ${state}">${esc({accepted:'有可用类型',excluded:'明确不接受',unknown:'需核实'}[state])} · ${count} 个项目</span>`).join('');
+   const variants=groups.map(group=>{
+    const cells=row.cells.filter(cell=>group.programs.includes(cell.programId));
+    const summary=group.options.map(option=>`${decisionLabels[option.state]}：${option.shortLabel}；${option.detail}`).join(' ｜ ');
+    const listed=group.options.filter(option=>option.state==='accepted').map(option=>option.shortLabel);
+    const excluded=group.options.filter(option=>option.state==='excluded').map(option=>option.shortLabel);
+    const concise=[listed.length?'可：'+listed.join('、'):'',excluded.length?'否：'+excluded.join('、'):'',group.options.some(option=>option.state==='unknown')?(listed.length||excluded.length?'其余类型':'')+'需核实':''].filter(Boolean).join('；');
+    const detail=(group.options.find(option=>option.state==='accepted')||group.options[0])?.detail||'';
+    return `<tr><td><div class="qualification-compact-line"><span class="qualification-compact-text" title="${esc(summary)}">${esc(concise)}；${esc(detail)}</span></div></td><td>${applies(group.programs)}</td><td>${hint(row,cells,'查看'+row.label+'这一组项目的完整条件')}</td></tr>`;
+   }).join('');
+   return `<tr data-qualification="${esc(row.id)}" data-qualification-label="${esc([row.label,...row.values||[],...row.originalLabels||[]].join(' ').toLowerCase())}"><th scope="row">${esc(row.label)}${hint(row,row.cells,'查看'+row.label+'包含的资格及适用范围')}</th><td><details class="qualification-variants"><summary><span>${summary}</span><span class="qualification-expand-label">${groups.length} 组条件与适用项目</span></summary><div class="table-wrap"><table class="qualification-variants-table"><colgroup><col><col class="qualification-overview-scope"><col class="qualification-overview-info"></colgroup><thead><tr><th>附加条件与适用说明</th><th>适用项目</th><th>详情</th></tr></thead><tbody>${variants}</tbody></table></div></details></td></tr>`;
+  };
+  return `<div class="qualification-tools"><label class="search">${ui.icon('search')}<input data-qualification-search aria-label="搜索学制或资格" placeholder="搜索学制、认证或文凭，如 IB、WASC、DSE"></label><span class="muted small">${rows.length} 项统一资格 · ${programs.length} 个项目</span></div><p class="qualification-legend">展开每项资格查看具体条件和适用项目；“有可用类型”仍须逐项满足完整条件，点击 ! 查看依据。</p><div class="table-wrap"><table class="qualification-overview"><colgroup><col class="qualification-overview-name"><col></colgroup><thead><tr><th>学制／资格</th><th>项目认可情况与附加条件</th></tr></thead>${educationGroups.map(group=>`<tbody data-qualification-group="${group.id}"><tr class="qualification-group-heading"><th colspan="2">${group.label}</th></tr>${rows.filter(row=>row.group===group.id).map(renderRow).join('')}</tbody>`).join('')}</table></div><p class="qualification-legend">可申请仍须满足完整条件；明确不接受与需核实分别列示。不同资格路径之间仍可择一，语言和项目其他要求另行核对。</p><p class="qualification-empty hidden">没有找到该学制或资格。</p>`;
 }
