@@ -1,8 +1,9 @@
 // Adapt imported data to the shared school/project presentation. This module
 // does not change stored rules or decide a student's eligibility.
+import { programEntryLabel } from './program-presentation.js';
 function sophiaFlaEntry(p) {
   if(p.school!=='上智大学'||(p.code!=='FLA'&&p.englishName!=='Faculty of Liberal Arts'))return '';
-  if(/编入|transfer/i.test(p.channel||''))return '编入';
+  if(/编入|转入|transfer/i.test(p.channel||''))return programEntryLabel(p);
   if(/一年级|first.year|freshman/i.test(p.channel||''))return '申请';
   return '';
 }

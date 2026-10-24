@@ -134,7 +134,7 @@ test('first-year and transfer projects share one overview while keeping separate
   const selected=renderSchoolDetail(first.school,all,ui,{channel:transfer.channel});
   assert.equal(selected,initial,'legacy channel filters must no longer hide projects');
   assert.doesNotMatch(selected,/data-school-channel/);
-  assert.match(selected,/FLA · 一年级申请/);assert.match(selected,/FLA · 三年级编入/);
+  assert.match(selected,/FLA · 申请/);assert.match(selected,/FLA · 三年编入/);
   assert.doesNotMatch(renderProjectDetail(first,ui),/编入专属条件/);
   assert.doesNotMatch(renderProjectDetail(transfer,ui),/一年级专属条件/);
 });
@@ -148,13 +148,13 @@ test('Sophia FLA application and transfer are two visible projects with separate
   transfer.language[0].score=7.5;
   const next=structuredClone(first);next.id='AI-fla-next';next.year=2028;next.paths[0].all[0].label='下一年度专属资格';
   const all=[transfer,next,first],before=JSON.stringify(all),school=groupSchools(all)[0];
-  assert.deepEqual(school.offerings.map(p=>p.code),['FLA 申请','FLA 编入']);
+  assert.deepEqual(school.offerings.map(p=>[p.code,p.entry]),[['FLA','申请'],['FLA','三年编入']]);
   assert.equal(school.channels.length,1);
   const html=renderSchoolDetail('上智大学',all,ui,{year:2027,channel:transfer.channel});
   assert.doesNotMatch(html,/data-school-channel|下一年度专属资格/);
   assert.ok(html.includes(`href="#program/${first.id}"`));assert.ok(html.includes(`href="#program/${transfer.id}"`));
   assert.equal((html.match(/data-compare=/g)||[]).length,2);
-  assert.match(html,/FLA 申请/);assert.match(html,/FLA 编入/);
+  assert.match(html,/FLA · 申请/);assert.match(html,/FLA · 三年编入/);
   assert.match(html,/一年级申请须完成十二年教育/);assert.match(html,/须完成大学两年且为正式学位生/);
   for(const p of [first,transfer])assert.ok(html.includes(p.materials[0].note));
   const rows=buildQualificationRows([first,transfer],all);
@@ -164,8 +164,8 @@ test('Sophia FLA application and transfer are two visible projects with separate
   assert.deepEqual(scores.find(r=>r.score===6.5).programs,[first.id]);
   assert.deepEqual(scores.find(r=>r.score===7.5).programs,[transfer.id]);
   const firstPage=renderProjectDetail(first,{...ui,allPrograms:all}),transferPage=renderProjectDetail(transfer,{...ui,allPrograms:all});
-  assert.match(firstPage,/<h1>FLA 申请 · 国际教养学部/);assert.doesNotMatch(firstPage,/须完成大学两年且为正式学位生|编入项目专用推荐材料/);
-  assert.match(transferPage,/<h1>FLA 编入 · 国际教养学部/);assert.doesNotMatch(transferPage,/一年级申请须完成十二年教育|申请项目专用推荐材料/);
+  assert.match(firstPage,/<h1>FLA · 国际教养学部 · 申请/);assert.doesNotMatch(firstPage,/须完成大学两年且为正式学位生|编入项目专用推荐材料/);
+  assert.match(transferPage,/<h1>FLA · 国际教养学部 · 三年编入/);assert.doesNotMatch(transferPage,/一年级申请须完成十二年教育|申请项目专用推荐材料/);
   assert.equal(JSON.stringify(all),before,'project presentation must preserve stored IDs, channels and complete rules');
 });
 
@@ -173,7 +173,7 @@ test('FLA presentation names apply only to identified Sophia entry types', () =>
   const p=imported();
   assert.equal(programLabel(p),'FLA');assert.equal(schoolViewGroup(p),p.channel);
   p.school='上智大学';assert.equal(programLabel(p),'FLA 申请');
-  p.channel='Third-year Transfer Admissions';assert.equal(programLabel(p),'FLA 编入');
+  p.channel='Third-year Transfer Admissions';assert.equal(programLabel(p),'FLA 三年编入');
   p.channel='其他待核实类别';assert.equal(programLabel(p),'FLA');assert.equal(schoolViewGroup(p),p.channel);
   p.code='FST';p.channel='一年级入学';assert.equal(programLabel(p),'FST');
 });

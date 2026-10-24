@@ -19,19 +19,19 @@ test('every school/year project is included regardless of its channel; original 
  for(const p of programs)assert.ok(view.html.includes(`href="#program/${p.id}"`));
  assert.ok(!view.html.includes('href="#program/next"'));
  assert.equal(JSON.stringify(programs),before);
- assert.ok(groupSchools(programs)[0].offerings.some(p=>p.entry.includes('三年级')));
+ assert.ok(groupSchools(programs)[0].offerings.some(p=>p.entry.includes('三年编入')));
 });
 
 test('context labels distinguish entry year, Type and language without renaming stored programs',()=>{
  const programs=many(),labels=buildProgramLabels(programs);
  assert.equal(new Set(labels.values()).size,12);
- assert.equal(programEntryLabel(programs[0]),'一年级申请 · Type A · 英语');
- assert.equal(programEntryLabel(programs[1]),'三年级编入／转入');
- assert.equal(programEntryLabel({channel:'二、三年级编入'}),'二、三年级编入');
+ assert.equal(programEntryLabel(programs[0]),'申请 · 英');
+ assert.equal(programEntryLabel(programs[1]),'三年编入');
+ assert.equal(programEntryLabel({channel:'二、三年级编入'}),'二、三年编入');
  const raw='MEXT奖学金通道（本文仅含双申说明及GPA附录）';
- assert.equal(programEntryLabel({channel:raw}),raw);
+ assert.equal(programEntryLabel({channel:raw}),'MEXT奖学金 · 附录');
  const fla=[{id:'a',code:'FLA',school:'上智大学',channel:'一年级入学'},{id:'b',code:'FLA',school:'上智大学',channel:'三年级编入'}];
- assert.deepEqual([...buildProgramLabels(fla).values()],['FLA 申请','FLA 编入']);
+ assert.deepEqual([...buildProgramLabels(fla).values()],['FLA · 申请','FLA · 三年编入']);
  const scope=renderProgramScope(programs.map(p=>p.id),programs,{...ui,programLabel:p=>labels.get(p.id)});
  assert.match(scope,/<summary>全部 12 个项目<\/summary>/);
  for(const p of programs)assert.ok(scope.includes(`href="#program/${p.id}"`));

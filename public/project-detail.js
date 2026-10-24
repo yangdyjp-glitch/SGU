@@ -7,11 +7,13 @@ import { documentUrl } from './document-review.js';
 import { programLabel, languageRequirementText } from './imported-requirement-model.js';
 import { renderStoredRequirements } from './formal-requirements.js';
 import { tuitionText } from './tuition.js';
+import { buildProgramTitles, programTitle, programEntryLabel } from './program-presentation.js';
 export { buildProjectView, pathDescription } from './requirement-model.js';
 
 export function renderProjectDetail(p, ui) {
   const { esc, icon, tag, button, evidence, showSources = false } = ui;
   const displayLabel=ui.programLabel||programLabel;
+  const title=ui.programTitle?.(p)||buildProgramTitles(ui.allPrograms||[p]).get(p.id)||programTitle(p);
   const view = buildProjectView(p);
   const sourceLinks = (p.sourceIds || []).map(id => `<a class="btn ghost sm" href="${documentUrl(id)}" target="_blank" rel="noopener">${p.sourceIds.length === 1 ? '完整原文' : esc(ui.documents?.find(d => d.id === id)?.name || id)} ${icon('eye')}</a>`).join('');
   const refs = sources => {
@@ -23,7 +25,7 @@ export function renderProjectDetail(p, ui) {
   const nav = [['academic', '学历与资格'], ['language', '语言成绩'], ['materials', '申请材料'], ['rounds', '申请轮次'], ...(view.post.length ? [['after', '后续要求']] : []),...(p.semanticVersion===1?[['complete','完整条款']]:[])];
   return `<div class="project-detail"><div class="hierarchy-breadcrumb"><a href="#programs">学校与项目</a>${icon('chevron')}<a href="#school/${encodeURIComponent(p.school)}">${esc(p.school)}</a>${icon('chevron')}<span>${esc(displayLabel(p))}</span></div>
     <section class="panel section project-heading-panel">
-      <div class="program-title"><div><div class="flex wrap">${tag(p.school)}${tag(p.year + ' 入学')}${tag(p.degree)}</div><h1>${esc(displayLabel(p))} · ${esc(p.name)}</h1><p class="english">${esc(p.englishName)}</p><p class="muted small">${esc(p.channel)}${p.partner ? ' · 合作院校：' + esc(p.partner) : ''}</p></div><div class="project-actions">${button(icon('edit') + ' 编辑规则', 'edit-program', `data-id="${p.id}"`)}${button('选择学生检查', 'select-student', `data-id="${p.id}"`, 'primary')}</div></div>
+      <div class="program-title"><div><div class="flex wrap">${tag(p.school)}${tag(p.year + ' 入学')}${tag(p.degree)}</div><h1>${esc(title)}</h1><p class="muted small">${esc(programEntryLabel(p))}${p.partner ? ' · 合作院校：' + esc(p.partner) : ''}</p><details class="program-original"><summary>原始名称与招生方式</summary><dl><dt>项目全称</dt><dd>${esc(p.name)}</dd>${p.englishName?`<dt>英文全称</dt><dd>${esc(p.englishName)}</dd>`:''}<dt>招生方式</dt><dd>${esc(p.channel||'未注明')}</dd></dl></details></div><div class="project-actions">${button(icon('edit') + ' 编辑规则', 'edit-program', `data-id="${p.id}"`)}${button('选择学生检查', 'select-student', `data-id="${p.id}"`, 'primary')}</div></div>
       <div class="source-panel detail-section" id="detail-sources"><div class="source-summary"><strong>原文与版本</strong><span>${esc(p.year)} 招生手册 · v${esc(p.version)}</span><span class="source-audience">${esc(view.audience)}</span></div><div class="source-actions"><button type="button" class="source-switch" role="switch" aria-checked="${showSources}" data-act="toggle-sources"><span>显示详细原文链接</span><span class="switch-track" aria-hidden="true"></span></button>${sourceLinks}${button('修改记录', 'program-history', `data-id="${p.id}"`, 'ghost sm')}</div></div>
       <nav class="rule-nav" aria-label="项目要求导航">${nav.map(([key, label]) => `<a href="#program/${p.id}/${key}">${label}</a>`).join('')}</nav>
     </section>

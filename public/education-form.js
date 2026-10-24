@@ -1,6 +1,6 @@
 import { qualificationTypes, qualificationType, studentQualifications, studentAccreditations, educationContext, educationReviewContext, commonAccreditors, renderQualificationHint, baseQualifications, isEducationVerification, educationVerificationFields, studentEducationEvidence } from './education-model.js';
 import { buildQualificationCatalog } from './qualification-matrix.js';
-import { programLabel } from './imported-requirement-model.js';
+import { buildProgramTitles } from './program-presentation.js';
 
 const statuses=[['','待核实'],['studying','在读，未确认取得'],['expected','预计取得'],['completed','已取得']];
 const designationFields=[['japanDesignated12','日本境内MEXT指定12年国际学校'],['designated11','MEXT指定十一年课程'],['mextEquivalent','MEXT认定等同课程'],['educationEvidence.mextOverseas','MEXT认定／指定的海外高中相当设施'],['educationEvidence.mextSpecialized','MEXT指定专修学校高等课程'],['educationEvidence.japanForeignShort','在日外国制度非12年高中相当课程'],['educationEvidence.japanForeignDesignated','在日外国制度高中相当设施已获MEXT指定']];
@@ -12,6 +12,7 @@ export function projectEducationRules(p){return [...new Map([...p.paths.flatMap(
 export function renderEducationForm(d,programs,ui,selectedProject=''){
   d={...d,educationEvidence:studentEducationEvidence(d)};
   const {esc,field,select,triField,textArea}=ui,q=studentQualifications(d),certs=studentAccreditations(d),catalogue=buildQualificationCatalog(programs);
+  const titles=buildProgramTitles(programs),programLabel=p=>titles.get(p.id);
   const f=(label,name,value,type='text',help='')=>field(label,'edu.'+name,value,type,help);
   const sel=(label,name,value,options,help='')=>select(label,'edu.'+name,value,options,help);
   const triF=(label,name,value,help='')=>triField(label,'edu.'+name,value,help);
