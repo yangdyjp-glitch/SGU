@@ -2,6 +2,7 @@ import { buildProjectView, pathDescription } from './requirement-model.js';
 import { renderInfoHint } from './detail-hints.js';
 import { programLabel } from './imported-requirement-model.js';
 import { baseQualifications, educationGroups, educationDisplayGroups, normalizeName as normal, qualificationVariant, canonicalAccreditor, commonAccreditors, qualificationHint } from './education-model.js';
+import {educationPathTypesFor, educationPathKey, educationLabelKey, qualificationCatalogKey} from './education-catalog.js';
 export { baseQualifications } from './education-model.js';
 
 // The shared catalogue names qualifications, not school-specific A/B/C paths.
@@ -10,6 +11,7 @@ export { baseQualifications } from './education-model.js';
 
 const positiveValues = atom => atom.op === 'in' && Array.isArray(atom.value) ? atom.value : atom.op === 'eq' ? [atom.value] : [];
 const sameValue = (a, b) => normal(a) === normal(b);
+const matchesValue=(item,value)=>item.field==='qualification'?qualificationCatalogKey(value)===item.id||item.values?.some(v=>sameValue(v,value)):item.field==='accreditation'?item.values?.some(v=>canonicalAccreditor(v)===canonicalAccreditor(value)):item.values?.some(v=>sameValue(v,value));
 const unique = values => [...new Set(values)];
 function groupScopeNotes(cells){
   const groups=new Map();
@@ -41,34 +43,43 @@ function curriculumRequirements(item, program) {
 }
 
 export function buildQualificationCatalog(programs) {
-  const result = baseQualifications.map(item => ({ ...item }));
+  const result = baseQualifications.map(item => ({ ...item, ...(item.values?{values:[...item.values]}:{}) }));
   const coveredFields = new Set([...result.flatMap(item => item.fields||[item.field]), 'educationStatus', 'ageAtEnrollment', 'shortSchool']);
   for (const p of programs) for (const path of p.paths || []) for (const atom of path.all || []) {
     if (['qualification', 'accreditation'].includes(atom.field)) {
       for (const value of positiveValues(atom).filter(value => typeof value === 'string')) {
-        if (!result.some(item => item.field === atom.field && item.values?.some(v => sameValue(v, value)))) {
-          result.push({ id: `${atom.field}:${normal(value)}`, label: value, field: atom.field, values: [value],group:atom.field==='accreditation'?'other':'curriculum',subgroup:atom.field==='accreditation'?'其他认证机构':'其他原始资格' });
-        }
+        const existing=result.find(item=>item.field===atom.field&&matchesValue(item,value));
+        if(existing){if(!existing.values.includes(value))existing.values.push(value);}
+        else result.push({ id: atom.field==='qualification'?qualificationCatalogKey(value):`${atom.field}:${normal(value)}`, label: value, field: atom.field, values: [value],group:atom.field==='accreditation'?'other':'curriculum',subgroup:atom.field==='accreditation'?'其他认证机构':'其他原始资格' });
       }
     } else if (!atom.field.startsWith('verification.') && !coveredFields.has(atom.field) && atom.op === 'eq' && atom.value === true) {
       result.push({ id: `condition:${atom.field}`, label: atom.label || atom.field, field: atom.field,group:'education' });
       coveredFields.add(atom.field);
     }
   }
-  for(const p of programs)for(const path of p.paths||[]){
+  const pathKeys=new Map();
+  for(const p of [...programs].sort((a,b)=>a.id.localeCompare(b.id)))for(const path of p.paths||[]){
     if(result.some(item=>matchingAtoms(item,path,p).length))continue;
-    const id='path:'+normal(path.label||path.id);let item=result.find(row=>row.id===id);
-    if(!item){item={id,label:path.label||'其他原始资格',group:'education',subgroup:'其他原始教育路径',localPaths:{}};result.push(item);}
-    (item.localPaths[p.id]??=[]).push(path.id);
+    let types=educationPathTypesFor(path);
+    if(!types.length){
+      const known=result.find(item=>[item.label,...item.values||[],...item.originalLabels||[]].some(name=>educationLabelKey(name)===educationLabelKey(path.label)));
+      types=[known||pathKeys.get(educationPathKey(path))||{id:'path:'+normal(path.label||path.id),label:path.label||'其他原始资格',group:'education',subgroup:'其他原始教育路径'}];
+    }
+    for(const type of types){
+      let item=result.find(row=>row.id===type.id);
+      if(!item){item={...type};result.push(item);}
+      ((item.localPaths??={})[p.id]??=[]).push(path.id);
+      item.originalLabels=unique([...(item.originalLabels||[]),path.label].filter(Boolean));
+      pathKeys.set(educationPathKey(path),item);
+    }
   }
   return result;
 }
 
 function matchingAtoms(item, path, program) {
-  if(item.localPaths)return item.localPaths[program.id]?.includes(path.id)?[path]:[];
-  return (path.all || []).filter(atom => {
+  const direct=(path.all || []).filter(atom => {
     if (!(item.fields||[item.field]).includes(atom.field)&&!(item.mext&&atom.field==='standard12')) return false;
-    if (item.values) return positiveValues(atom).some(value => item.values.some(v => sameValue(v, value)));
+    if (item.values) return positiveValues(atom).some(value => matchesValue(item,value));
     if (atom.op !== 'eq' || atom.value !== true) return false;
     if (item.mext&&atom.field==='standard12') {
       const requirement = program.requirements?.find(row => row.id === atom.source?.ruleId);
@@ -77,12 +88,13 @@ function matchingAtoms(item, path, program) {
     }
     return true;
   });
+  return direct.length?direct:item.localPaths?.[program.id]?.includes(path.id)?[path]:[];
 }
 
 function describe(item, path, matching) {
   if(path.imported){
     if(!item.values)return path.displayDescription;
-    return pathDescription({...path,all:path.all.map(atom=>matching.includes(atom)?{...atom,value:positiveValues(atom).filter(value=>item.values.some(v=>sameValue(v,value)))}:atom)});
+    return pathDescription({...path,all:path.all.map(atom=>matching.includes(atom)?{...atom,value:positiveValues(atom).filter(value=>matchesValue(item,value))}:atom)});
   }
   if (!item.values) return path.displayDescription;
   // Remove only the alternatives already named by this row, retaining all other conditions.
@@ -111,7 +123,7 @@ export function buildQualificationRows(programs, allPrograms = programs) {
       const exclusion = p.requirements?.find(row => row.id === 'R013' && p.sourceIds?.includes('aohb27'));
       const explicitlyExcluded = exclusion && ['preparatory', 'japanEquivalency', 'specialized-secondary'].includes(item.id);
       const accepted=paths.length>0||requirements.length>0;
-      const originals=[...new Set(paths.flatMap(path=>matchingAtoms(item,path,p).flatMap(positiveValues)).filter(v=>typeof v==='string'&&(!item.values||item.values.some(alias=>sameValue(alias,v)))))];
+      const originals=[...new Set(paths.flatMap(path=>matchingAtoms(item,path,p).flatMap(positiveValues)).filter(v=>typeof v==='string'&&(!item.values||matchesValue(item,v))))];
       let scopeNote='',scopeSummary='';
       if(accepted&&item.id==='accreditation'){
         const recognized=commonAccreditors.filter(v=>originals.some(name=>canonicalAccreditor(name)===v));
@@ -120,10 +132,10 @@ export function buildQualificationRows(programs, allPrograms = programs) {
           scopeNote=`仅明确列明：${recognized.join('、')||'范围待核实'}；${missing.join('、')}未列明或不适用，须另行核实。`;
           scopeSummary=`列明 ${recognized.join('、')||'范围待核实'}；其余待核实`;
         }
-      }else if(accepted&&item.id.endsWith('alevel')){
+      }else if(accepted&&['gce-alevel','international-alevel'].includes(item.id)){
         const variants=new Set(originals.map(qualificationVariant));
-        scopeNote=variants.has('as-and-a')?'列明 AS and A levels；仅 AS 是否足够须结合本项目科目、分数及完整路径核对，不等于完整 A-Level。':'仅列明完整 A-Level；仅 AS 未列明为此路径可接受资格。';
-        scopeSummary=variants.has('as-and-a')?'仅 AS 须核对科目与成绩':'完整 A-Level；仅 AS 未列明';
+        scopeNote=variants.has('as-and-a')||variants.has('as')?'列明 AS 相关资格；须结合本项目科目、分数及完整路径核对，不等于完整 A-Level。':'仅列明完整 A-Level；仅 AS 未列明为此路径可接受资格。';
+        scopeSummary=variants.has('as-and-a')||variants.has('as')?'仅 AS 须核对科目与成绩':'完整 A-Level；仅 AS 未列明';
         if(variants.has('uk-entry')){
           scopeNote+=' 含“具英国大学入学资格”的限定，须另核资格效力。';
           scopeSummary+='；须具英国大学入学资格';
@@ -171,12 +183,12 @@ function qualificationOptions(item,cell){
     const alternatives=cell.alternatives.filter(alternative=>alternative.values.some(original=>canonicalAccreditor(original)===name)),listed=alternatives.length>0;
     return {...option(name,name,name,listed?'accepted':'unknown',listed?alternativeText(alternatives):'手册未列明'+name+'；需核实本项目是否接受其具体认证范围。不能由其他机构获认可推定本机构也可用。'),sources:alternatives.flatMap(alternative=>alternative.sources),notes:alternatives.flatMap(alternative=>alternative.notes)};
   });
-  if(item.id.endsWith('alevel')){
+  if(['gce-alevel','international-alevel'].includes(item.id)){
     const variants=new Set(cell.originals.map(qualificationVariant));
-    const full=cell.accepted&&variants.size>0;
-    const asListed=variants.has('as-and-a');
-    return [option('full','完整 A-Level','完整 A-Level',full?'accepted':state,details+(variants.has('uk-entry')?' 须核对原文“具英国大学入学资格”的限定。':'')),
-      option('as','仅 AS Level','仅 AS',full&&!asListed?'excluded':'unknown',full&&!asListed?'本项要求完整 A-Level；仅 AS 不能单独满足本项资格，仍可另核其他申请路径。':asListed?'原文列明 AS and A levels，但仅 AS 是否足够仍须核对科目、成绩及完整路径要求。\n'+alternativeText(cell.alternatives.filter(alternative=>alternative.values.some(value=>qualificationVariant(value)==='as-and-a'))):'手册未明确仅 AS 是否可用，须核实，不能按完整 A-Level 自动认可。')];
+    const full=cell.accepted&&[...variants].some(v=>v!=='as');
+    const asListed=variants.has('as-and-a')||variants.has('as');
+    return [option('full','完整 A-Level','完整 A-Level',full?'accepted':cell.accepted?'unknown':state,details+(variants.has('uk-entry')?' 须核对原文“具英国大学入学资格”的限定。':'')),
+      option('as','仅 AS Level','仅 AS',variants.has('as')?'accepted':full&&!asListed?'excluded':'unknown',full&&!asListed?'本项要求完整 A-Level；仅 AS 不能单独满足本项资格，仍可另核其他申请路径。':asListed?'原文列明 AS 相关资格，仍须核对科目、成绩及完整路径要求。\n'+alternativeText(cell.alternatives.filter(alternative=>alternative.values.some(value=>['as','as-and-a'].includes(qualificationVariant(value))))):'手册未明确仅 AS 是否可用，须核实，不能按完整 A-Level 自动认可。')];
   }
   return [option(item.id,item.id==='baccalaureate'?'法国完整 Baccalaureate':item.label,item.id==='baccalaureate'?'法国完整资格':item.label)];
 }
@@ -186,7 +198,9 @@ function withQualificationOptions(row){return {...row,cells:row.cells.map(cell=>
 // requirements and evidence; matching still uses the original paths above.
 export function buildQualificationDisplayRows(programs,allPrograms=programs){
   const rows=buildQualificationRows(programs,allPrograms).map(withQualificationOptions),byId=new Map(rows.map(row=>[row.id,row]));
-  const groupsByMember=new Map(educationDisplayGroups.flatMap(group=>group.members.map(member=>[member.id,group])));
+  const displayGroups=[...educationDisplayGroups.map(group=>({...group,members:[...group.members]})),{id:'university-education',label:'大学学习与学位',members:[],summary:'按项目分别核对授予机构、正式学位生身份、学习年限、学分及专业要求。'}];
+  for(const row of rows.filter(row=>row.displayGroup))displayGroups.find(group=>group.id===row.displayGroup)?.members.push({id:row.id,shortLabel:row.shortLabel||row.label});
+  const groupsByMember=new Map(displayGroups.flatMap(group=>group.members.map(member=>[member.id,group])));
   const emitted=new Set();
   return rows.flatMap(row=>{
     const group=groupsByMember.get(row.id);
@@ -223,7 +237,7 @@ export function buildQualificationDisplayRows(programs,allPrograms=programs){
       for(const [text,ids] of statuses)memberDetails.push({label:member.label,text,programs:ids,backgroundNotes:[],sources:[]});
     }
     return [{id:group.id,label:group.label,group:'education',members,memberDetails,
-      values:unique(members.flatMap(member=>[member.label,...member.values||[]])),
+      values:unique(members.flatMap(member=>[member.label,...member.values||[],...member.originalLabels||[]])),
       cells,scopes:groupScopeNotes(cells),conditions:accepted.length?[{
         text:group.summary,programs:accepted.map(cell=>cell.programId),backgroundNotes:[],sources:accepted.flatMap(cell=>cell.sources)
       }]:[]}];
@@ -258,7 +272,7 @@ export function buildQualificationDecisionInfo(row,programs,programId){
   const label=id=>programLabel(programs.find(program=>program.id===id)||{id});
   const cells=programId?row.cells.filter(cell=>cell.programId===programId):row.cells;
   const groups=groupDecisionOptions(cells,true);
-  const hints=qualificationHint(row);
+  const hints=[...qualificationHint(row),...(row.originalLabels?.length?[{text:'原始路径名称：'+row.originalLabels.join('；')}]:[])];
   return {label:row.label+(programId?' · '+label(programId):''),parts:[
     {text:'下表逐项说明这类资格是否可用。“可申请”仍须满足对应条件、语言及项目其他要求；“需核实”不表示不接受。'},
     ...groups.map(group=>({title:group.programs.map(label).join(' / '),rows:group.options.map(option=>({...option,status:decisionLabels[option.state],text:option.detail}))})),
@@ -311,6 +325,6 @@ export function renderQualificationMatrix(programs, allPrograms, ui) {
   };
   const conditionLine=row=>`<span class="qualification-conditions-line"><span class="qualification-conditions-text">${conditions(row)}</span>${infoButton(buildQualificationDecisionInfo(row,programs),'qualification-hint qualification-notes-hint','<span aria-hidden="true">!</span>','查看'+row.label+'的完整附加条件与适用说明')}</span>`;
   return `<div class="qualification-tools"><label class="search">${ui.icon('search')}<input data-qualification-search aria-label="搜索学制或资格" placeholder="搜索学制、认证或文凭，如 IB、WASC、DSE"></label><span class="muted small">${rows.length} 项统一资格</span></div>
-    <div class="table-wrap"><table class="qualification-matrix" style="--qualification-min-width:${Math.max(680,600+programWidths.reduce((sum,width)=>sum+width,0))}px"><colgroup><col class="qualification-name-column">${programWidths.map(width=>`<col class="qualification-program-column" style="width:${width}px">`).join('')}<col></colgroup><thead><tr><th scope="col">学制／资格</th>${programs.map(p => `<th scope="col" class="acceptance-column"><a href="#program/${esc(p.id)}">${esc(programLabel(p))}</a></th>`).join('')}<th scope="col">附加条件与适用说明</th></tr></thead>${educationGroups.map(group=>`<tbody data-qualification-group="${group.id}"><tr class="qualification-group-heading"><th colspan="${programs.length+2}">${group.label}</th></tr>${rows.filter(row=>row.group===group.id).map(row => `<tr data-qualification="${esc(row.id)}" data-qualification-label="${esc([row.label,...row.values||[]].join(' ').toLowerCase())}"><th scope="row">${esc(row.label)}${rowHint(row)}</th>${row.cells.map(cell=>resultCell(row,cell)).join('')}<td class="qualification-conditions">${conditionLine(row)}</td></tr>`).join('')}</tbody>`).join('')}</table></div>
+    <div class="table-wrap"><table class="qualification-matrix" style="--qualification-min-width:${Math.max(680,600+programWidths.reduce((sum,width)=>sum+width,0))}px"><colgroup><col class="qualification-name-column">${programWidths.map(width=>`<col class="qualification-program-column" style="width:${width}px">`).join('')}<col></colgroup><thead><tr><th scope="col">学制／资格</th>${programs.map(p => `<th scope="col" class="acceptance-column"><a href="#program/${esc(p.id)}">${esc(programLabel(p))}</a></th>`).join('')}<th scope="col">附加条件与适用说明</th></tr></thead>${educationGroups.map(group=>`<tbody data-qualification-group="${group.id}"><tr class="qualification-group-heading"><th colspan="${programs.length+2}">${group.label}</th></tr>${rows.filter(row=>row.group===group.id).map(row => `<tr data-qualification="${esc(row.id)}" data-qualification-label="${esc([row.label,...row.values||[],...row.originalLabels||[]].join(' ').toLowerCase())}"><th scope="row">${esc(row.label)}${rowHint(row)}</th>${row.cells.map(cell=>resultCell(row,cell)).join('')}<td class="qualification-conditions">${conditionLine(row)}</td></tr>`).join('')}</tbody>`).join('')}</table></div>
     <p class="qualification-legend">可：列明可用，仍须满足条件；N项可：组内有N种可用类型，点击查看；否：明确不接受本项；待核：原文未明确或有冲突。未列明不等于不接受，单项不适用也不妨碍通过其他路径申请。</p><p class="qualification-empty hidden">没有找到该学制或资格。</p>`;
 }
