@@ -18,11 +18,13 @@ import { configureNetwork } from './lib/network.mjs';
 import { createRequestOrigin } from './lib/request-origin.mjs';
 import { loadFile, saveFile } from './lib/file-store.mjs';
 import { cloudPDFEnabled } from './lib/cloud-pdf.mjs';
+import { sendJson, sendContent } from './lib/http-response.mjs';
 const expectedOrigin=createRequestOrigin();
 const root=resolve('public');const port=Number(process.env.PORT||3210),host=process.env.HOST||'127.0.0.1';
 const mime={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.pdf':'application/pdf','.txt':'text/plain; charset=utf-8','.md':'text/plain; charset=utf-8'};
 const fail=(message,status=400,extra={})=>{throw Object.assign(new Error(message),{status,...extra});};
-function send(res,status,obj,extra={}){res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store',...extra});res.end(JSON.stringify(obj));}
+function send(res,status,obj,extra={}){return sendJson(res.req,res,status,obj,extra);}
+async function publicFile(req,res,path){const file=resolve(root,'.'+(path==='/'?'/index.html':path));if(!file.startsWith(root+sep))fail('路径无效',403);const content=await readFile(file);return sendContent(req,res,200,content,{'Content-Type':mime[extname(file)]||'application/octet-stream','Cache-Control':'no-cache'},{etag:true});}
 async function readBody(req){let size=0;const chunks=[];for await(const chunk of req){size+=chunk.length;if(size>35*1024*1024)fail('文件或请求过大，最大25MB文件',413);chunks.push(chunk);}try{return JSON.parse(Buffer.concat(chunks).toString()||'{}');}catch{fail('请求不是有效JSON');}}
 const userCount=async()=>Number((await db.prepare('SELECT count(*) AS n FROM users').get()).n);
 const workerEnabled=process.env.DOCUMENT_WORKER!=='disabled';
@@ -38,12 +40,15 @@ const server=http.createServer(async(req,res)=>{
  res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','same-origin');res.setHeader('X-Frame-Options','DENY');
  res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
  try{
-  const url=new URL(req.url,'http://localhost');const path=url.pathname;const token=(req.headers.cookie||'').split(';').map(s=>s.trim()).find(s=>s.startsWith('sgu_session='))?.slice(12);const user=await sessionUser(token);const actor=user?.login||'';
+  const url=new URL(req.url,'http://localhost');const path=decodeURIComponent(url.pathname);
+  // Public code and styles do not need a database session lookup for every file.
+  if(!path.startsWith('/api/')&&!path.startsWith('/uploads/')&&!path.startsWith('/sources/')){if(!['GET','HEAD'].includes(req.method))fail('请求方法不支持',405);return await publicFile(req,res,path);}
+  const token=(req.headers.cookie||'').split(';').map(s=>s.trim()).find(s=>s.startsWith('sgu_session='))?.slice(12);const user=await sessionUser(token);const actor=user?.login||'';
   if(path.startsWith('/api/')){
    const isWrite=!['GET','HEAD'].includes(req.method);
    if(isWrite){if(!String(req.headers['content-type']).startsWith('application/json')||req.headers['x-sgu-request']!=='1')fail('无效请求来源',403);if(req.headers.origin&&req.headers.origin!==expectedOrigin(req))fail('不允许跨站请求',403);if(user&&!path.startsWith('/api/auth/')&&req.headers['x-csrf-token']!==user.csrf)fail('会话验证失败，请刷新页面',403);}
    const body=isWrite?await readBody(req):null;
-   if(path==='/api/auth/state'&&req.method==='GET')return send(res,200,{setup:await userCount()===0,user:user?safeUser(user):null,csrf:user?.csrf});
+   if(path==='/api/auth/state'&&req.method==='GET')return send(res,200,{setup:user?false:await userCount()===0,user:user?safeUser(user):null,csrf:user?.csrf});
    if(path==='/api/auth/register'&&req.method==='POST'){
     rateLimit(req);if(typeof body.login!=='string'||!/^[a-zA-Z0-9_.@-]{3,80}$/.test(body.login)||typeof body.password!=='string'||body.password.length<8||body.password.length>200)fail('请填写有效账号和至少8位密码');
     const created=await transaction(async()=>{const first=await userCount()===0;if(!first&&body.invite!==(await db.prepare("SELECT value FROM meta WHERE key='invite'").get()).value)fail('团队邀请码不正确',403);const u={id:randomUUID(),login:body.login.toLowerCase(),role:first?'admin':'member'};if((await db.prepare('SELECT id FROM users WHERE login=?').get(u.login)))fail('账号已存在');await db.prepare('INSERT INTO users(id,name,login,password,created_at,role) VALUES(?,?,?,?,?,?)').run(u.id,u.login,u.login,passwordHash(body.password),now(),u.role);await event('account',u.login,u.login,{action:first?'创建管理员账号':'加入团队',role:u.role});return u;});
@@ -54,7 +59,10 @@ const server=http.createServer(async(req,res)=>{
    }
    if(!user)fail('请先登录',401);
    if(path==='/api/auth/logout'&&req.method==='POST'){await db.prepare('DELETE FROM sessions WHERE token=?').run(hashToken(token));return send(res,200,{ok:true},{'Set-Cookie':'sgu_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0'});}
-   if(path==='/api/bootstrap'&&req.method==='GET')return send(res,200,{user:safeUser(user),csrf:user.csrf,students:await listStudents(),programs:await getPrograms(),documents:await getDocumentSummaries(),revision:(await db.prepare("SELECT value FROM meta WHERE key='revision'").get())?.value,capabilities:{model:llmEnabled(),mineru:Boolean(process.env.MINERU_BIN),pdf:cloudPDFEnabled()?'cloud':process.env.MINERU_BIN?'mineru':null},team:(await db.prepare('SELECT id,name,login FROM users').all())});
+   if(path==='/api/bootstrap'&&req.method==='GET'){
+    const [students,programs,documents,revision,team]=await Promise.all([listStudents(),getPrograms(),getDocumentSummaries(),db.prepare("SELECT value FROM meta WHERE key='revision'").get(),db.prepare('SELECT id,name,login FROM users').all()]);
+    return send(res,200,{user:safeUser(user),csrf:user.csrf,students,programs,documents,revision:revision?.value,capabilities:{model:llmEnabled(),mineru:Boolean(process.env.MINERU_BIN),pdf:cloudPDFEnabled()?'cloud':process.env.MINERU_BIN?'mineru':null},team});
+   }
    if(path==='/api/revision'&&req.method==='GET')return send(res,200,{revision:(await db.prepare("SELECT value FROM meta WHERE key='revision'").get())?.value});
    if(path==='/api/openai'&&req.method==='GET')return send(res,200,await openAIStatus());
    if((path==='/api/openai'||path==='/api/openai/check')&&req.method==='POST'){
@@ -114,14 +122,14 @@ const server=http.createServer(async(req,res)=>{
     await saveDocument(doc);await event('document',doc.filename,actor,{action:'保存项目草稿',school:draft.target.school,year:draft.target.year});return draft;});
     return send(res,200,draft);
    }
-   if(path.startsWith('/api/documents/')&&req.method==='GET'){const doc=await getReviewDocument(path.split('/').pop());return send(res,200,documentForReview(doc,await getPrograms()));}
+   if(path.startsWith('/api/documents/')&&req.method==='GET'){const doc=await getReviewDocument(path.split('/').pop());return send(res,200,documentForReview(doc,doc.autoReview&&!doc.projectDraft?[]:await getPrograms()));}
    if(path==='/api/export'&&req.method==='GET')return send(res,200,{exportedAt:now(),programs:await getPrograms(),students:await listStudents(),versions:(await db.prepare('SELECT * FROM versions').all()),matches:(await db.prepare('SELECT * FROM matches').all()),events:(await db.prepare('SELECT * FROM events').all())},{'Content-Disposition':'attachment; filename="sgu-backup.json"'});
    fail('接口不存在',404);
   }
   if(!['GET','HEAD'].includes(req.method))fail('请求方法不支持',405);
-  if(path.startsWith('/sources/')&&!user)fail('请先登录',401);
+  if(path.startsWith('/sources/')){if(!user)fail('请先登录',401);return await publicFile(req,res,path);}
   if(path.startsWith('/uploads/')){if(!user)fail('请先登录',401);const doc=await getDocument(path.split('/')[2]);if(!doc||doc.builtin)fail('文件不存在',404);const content=await loadFile(doc.storageName);res.writeHead(200,{'Content-Type':mime[extname(doc.filename).toLowerCase()]||'application/octet-stream','Cache-Control':'no-store'});return res.end(content);}
-  const file=resolve(root,'.'+decodeURIComponent(path==='/'?'/index.html':path));if(!file.startsWith(root+sep))fail('路径无效',403);const content=await readFile(file);res.writeHead(200,{'Content-Type':mime[extname(file)]||'application/octet-stream','Cache-Control':'no-cache'});res.end(req.method==='HEAD'?undefined:content);
+  fail('页面不存在',404);
  }catch(e){send(res,e.status||(e.code==='ENOENT'?404:500),{error:e.status?e.message:e.code==='ENOENT'?'文件不存在':'服务处理失败，请检查服务器日志',current:e.current});if(!e.status&&e.code!=='ENOENT')console.error(e);}
 });
 server.listen(port,host,()=>console.log(`SGU 工作台已启动: http://${host}:${port}`));
