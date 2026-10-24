@@ -1,15 +1,16 @@
 import { renderProjectDetail, setupDetailHints } from './project-detail.js';
 import { groupSchools, renderSchoolDetail, schoolHref } from './school-detail.js';
 import { buildQualificationCatalog, buildQualificationRows } from './qualification-matrix.js';
-import { renderDocumentReview, renderDocumentStatus, matchingDocumentPrograms } from './document-review.js';
+import { renderDocumentReview, renderDocumentStatus, matchingDocumentPrograms, documentUrl } from './document-review.js';
 import { documentSummary, mergeDocumentSnapshot, documentStatusKey, renderDocumentBadge } from './document-status.js';
+import { createDocumentLoader } from './document-loader.js';
 import { renderOpenAISettings } from './openai-settings.js';
 import { programLabel } from './imported-requirement-model.js';
 import { minimumScoreText } from './score-table.js';
 import { tuitionText } from './tuition.js';
 import { renderEducationForm, gatherEducation, updateEducationForm } from './education-form.js';
 import { qualificationSummary, studentQualifications } from './education-model.js';
-let editDocumentContext = null, reviewingDocument = null, documentReadEpoch = 0, modalEpoch = 0, documentSyncPromise = null;
+let editDocumentContext = null, reviewingDocument = null, documentSyncPromise = null;
 const schoolFilters = new Map();
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -27,7 +28,7 @@ const program=id=>data.programs.find(p=>p.id===id||p.mergedProgramIds?.includes(
 const student=id=>data.students.find(s=>s.id===id);
 const pathValue=(o,p)=>p.split('.').reduce((v,k)=>v?.[k],o);
 function setValue(o,p,v){const a=p.split('.');let t=o;for(const k of a.slice(0,-1))t=t[k]??={};t[a.at(-1)]=v;}
-async function api(path,body,method){const r=await fetch('/api'+path,{method:method||(body?'POST':'GET'),headers:{'Content-Type':'application/json','X-SGU-Request':'1','X-CSRF-Token':csrf},...(body?{body:JSON.stringify(body)}:{})});const d=await r.json();if(!r.ok){const e=new Error(d.error||'请求失败');e.current=d.current;e.status=r.status;throw e;}return d;}
+async function api(path,body,method,signal){const r=await fetch('/api'+path,{method:method||(body?'POST':'GET'),headers:{'Content-Type':'application/json','X-SGU-Request':'1','X-CSRF-Token':csrf},...(body?{body:JSON.stringify(body)}:{}),...(signal?{signal}:{})});const d=await r.json();if(!r.ok){const e=new Error(d.error||'请求失败');e.current=d.current;e.status=r.status;throw e;}return d;}
 function toast(message){$('#toast').innerHTML=`<div class="toast">${esc(message)}</div>`;setTimeout(()=>$('#toast').innerHTML='',4500);}
 function empty(title,detail=''){return `<div class="empty">${icon('search')}<strong>${esc(title)}</strong><p>${esc(detail)}</p></div>`;}
 function evidence(src){return src?`<button class="evidence-btn" data-act="evidence" data-source="${esc(JSON.stringify(src))}">原文 p.${esc(src.page)}</button>`:'';}
@@ -35,8 +36,8 @@ function field(label,name,value='',type='text',help=''){return `<div class="fiel
 function select(label,name,value,options,help=''){return `<div class="field"><label for="f-${esc(name)}">${esc(label)}</label><select id="f-${esc(name)}" name="${esc(name)}">${options.map(o=>{const [v,l]=Array.isArray(o)?o:[o,o];return `<option value="${esc(v)}" ${String(value??'')===String(v)?'selected':''}>${esc(l)}</option>`;}).join('')}</select>${help?`<small>${esc(help)}</small>`:''}</div>`;}
 const triField=(label,name,value,help='')=>select(label,name,value,[['','待核实'],['true','是'],['false','否']],help);
 function textArea(label,name,value,rows=4){return `<div class="field"><label for="f-${esc(name)}">${esc(label)}</label><textarea id="f-${esc(name)}" name="${esc(name)}" rows="${rows}">${esc(value)}</textarea></div>`;}
-function showModal(title,body,wide=false){modalEpoch++;reviewingDocument=null;modalReturn=document.activeElement;$('#modal-root').innerHTML=`<div class="modal-backdrop"><section class="modal ${wide?'wide':''}" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-head"><h2 id="modal-title">${esc(title)}</h2><button class="icon-btn" data-act="close" aria-label="关闭">${icon('close')}</button></div><div class="modal-body">${body}</div></section></div>`;document.body.style.overflow='hidden';setTimeout(()=>$('.modal input,.modal textarea,.modal select,.modal button')?.focus(),30);}
-function closeModal(){if($('.modal [data-dirty="true"]')&&!confirm('关闭会丢弃尚未保存的修改。继续关闭？'))return;modalEpoch++;reviewingDocument=null;$('#modal-root').innerHTML='';document.body.style.overflow='';modalReturn?.focus();studentDraft=null;editDraft=null;}
+function showModal(title,body,wide=false){documentLoader.cancel();reviewingDocument=null;modalReturn=document.activeElement;$('#modal-root').innerHTML=`<div class="modal-backdrop"><section class="modal ${wide?'wide':''}" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-head"><h2 id="modal-title">${esc(title)}</h2><button class="icon-btn" data-act="close" aria-label="关闭">${icon('close')}</button></div><div class="modal-body">${body}</div></section></div>`;document.body.style.overflow='hidden';setTimeout(()=>$('.modal input,.modal textarea,.modal select,.modal button')?.focus(),30);}
+function closeModal(){if($('.modal [data-dirty="true"]')&&!confirm('关闭会丢弃尚未保存的修改。继续关闭？'))return;documentLoader.cancel();reviewingDocument=null;$('#modal-root').innerHTML='';document.body.style.overflow='';modalReturn?.focus();studentDraft=null;editDraft=null;}
 function formError(form,message){let el=form.querySelector('.error-box');if(!el){el=document.createElement('div');el.className='error-box';el.setAttribute('role','alert');form.prepend(el);}el.textContent=message;el.scrollIntoView({block:'nearest'});}
 async function refreshData(){const fresh=await api('/bootstrap');fresh.documents=fresh.documents.map(d=>mergeDocumentSnapshot(data?.documents.find(old=>old.id===d.id),d));data=fresh;csrf=data.csrf;auth=data.user;applyDocumentSnapshots(data.documents);}
 function shell(){const r=location.hash.slice(1).split('/')[0]||'students';const active=r==='student'?'students':['program','school'].includes(r)?'programs':r;const menu=[['students','students','学生与匹配'],['ask','ask','条件问答'],['programs','school','学校与项目'],['library','file','资料维护'],['history','history','修改记录']];const current=menu.find(m=>m[0]===active)?.[2]||(active==='settings'?'团队设置':'工作台');$('#app').innerHTML=`<div class="shell"><aside class="sidebar"><a href="#students" class="brand"><span class="brand-mark">${icon('graduation')}</span><span class="brand-text"><strong>SGU</strong><small>日本本科选校工作台</small></span></a><div class="nav-title">顾问工作空间</div><nav class="nav" aria-label="主导航">${menu.map(([id,ic,name])=>`<a href="#${id}" class="${active===id?'active':''}" ${active===id?'aria-current="page"':''} title="${name}">${icon(ic)}<span>${name}</span></a>`).join('')}</nav><div class="side-bottom"><a href="#settings">${icon('settings')}<span>团队设置</span></a><div class="side-note"><strong>每个判断，都有出处。</strong>依据已核对的招生要求<br>保留原文与规则版本</div></div></aside><div class="workspace"><header class="topbar"><div class="breadcrumbs"><span>选校工作台</span>${icon('chevron')}<span>${current}</span></div><div class="top-user"><span class="top-date">${new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'})}</span><div class="avatar">${esc(auth.login.slice(0,1))}</div><span>${esc(auth.login)}</span><button class="icon-btn" data-act="logout" aria-label="退出登录" title="退出登录">${icon('logout')}</button></div></header><div id="update-banner"></div><main id="main" class="main" tabindex="-1"></main></div></div>`;}
@@ -97,24 +98,34 @@ function applyDocumentSnapshots(snapshots){
   }
  }
 }
-async function documentDialog(id,background=false){
- const request=++documentReadEpoch,modal=modalEpoch;
- const incoming=await api('/documents/'+id);
- applyDocumentSnapshots([incoming]);
- if(request!==documentReadEpoch||modal!==modalEpoch)return;
- const latest=data.documents.find(d=>d.id===id);
- if((latest?.statusVersion||0)>(incoming.statusVersion||0))return;
- const view=$('.document-review'),same=view?.dataset.documentId===id;
- if(background&&!same)return;
- if(same){
+function documentLoadFeedback(html){
+ $('.document-load-feedback')?.remove();
+ if(html)$('.modal-body')?.insertAdjacentHTML('afterbegin',`<div class="document-load-feedback section">${html}</div>`);
+}
+const documentLoader=createDocumentLoader({
+ read:(id,signal)=>api('/documents/'+encodeURIComponent(id),undefined,'GET',signal),
+ latest:id=>data.documents.find(d=>d.id===id),
+ apply:incoming=>applyDocumentSnapshots([incoming]),
+ start(id,{background}){
+  if(background)return;
+  if($('.document-review')?.dataset.documentId!==id)showModal(data.documents.find(d=>d.id===id)?.name||'招生资料','',true);
+  documentLoadFeedback('<div class="loading" role="status" aria-live="polite" aria-busy="true">正在加载资料，请稍候…</div>');
+ },
+ success(incoming){
+  const view=$('.document-review');
+  if(view?.dataset.documentId!==incoming.id||view.dataset.contentStatus!==documentStatusKey(incoming))$('.modal-body').innerHTML=renderDocumentReview(incoming,data.programs,documentUI());
   reviewingDocument=incoming;
-  if(view.dataset.contentStatus===documentStatusKey(incoming))return;
-  $('.modal-body').innerHTML=renderDocumentReview(incoming,data.programs,documentUI());
- }else{
-  showModal(incoming.name,renderDocumentReview(incoming,data.programs,documentUI()),true);
-  reviewingDocument=incoming;
+  documentLoadFeedback('');
+  updateDocumentTargets();
+ },
+ failure(id,error){
+  const detail=error.status===401?'登录已失效，请刷新页面后重新登录。':['TypeError','SyntaxError'].includes(error.name)?'网络连接异常，请重试加载。':error.message||'请重试加载。';
+  documentLoadFeedback(`<div class="error-box" role="alert"><strong>资料暂时无法加载</strong><p>${esc(detail)}</p></div><div class="flex wrap">${button('重试加载','document',`data-id="${esc(id)}"`,'primary sm')}<a class="btn sm" href="${documentUrl(id)}" target="_blank" rel="noopener">查看原文件</a></div>`);
  }
- updateDocumentTargets();
+});
+function documentDialog(id,background=false){
+ if(background&&$('.document-review')?.dataset.documentId!==id)return Promise.resolve();
+ return documentLoader.open(id,{background});
 }
 function syncDocumentStates(){
  if(!data||!auth||document.hidden||(!$('.document-review')&&location.hash!=='#library'))return Promise.resolve();
@@ -187,7 +198,7 @@ if(act==='compare-programs'){const pp=[...selectedCompare].map(program).filter(B
 if(act==='document')return await documentDialog(b.dataset.id);
 if(act==='open-settings'||act==='open-published-program'){closeModal();return;}
 if(act==='confirm-document'){b.disabled=true;try{const result=await api('/documents/'+b.dataset.id+'/confirm',{expectedReviewVersion:Number(b.dataset.version),confirmed:true,action:b.dataset.action});applyDocumentSnapshots([result.document]);await refreshData();if(location.hash==='#library')libraryPage();await documentDialog(b.dataset.id,true);toast('已整体确认入库，完整规则与版本已保存');}catch(error){if(error.status===409)await documentDialog(b.dataset.id,true);throw error;}return;}
-if(act==='delete-document'){if(!confirm('删除本次上传的文件及其待确认整理结果？现有项目和历史版本不会被删除。'))return;b.disabled=true;await api('/documents/'+b.dataset.id,{expectedStatusVersion:Number(b.dataset.statusVersion)},'DELETE');documentReadEpoch++;closeModal();reviewingDocument=null;await refreshData();if(location.hash==='#library')libraryPage();toast('已删除本次上传资料，现有项目保持不变');return;}
+if(act==='delete-document'){if(!confirm('删除本次上传的文件及其待确认整理结果？现有项目和历史版本不会被删除。'))return;b.disabled=true;await api('/documents/'+b.dataset.id,{expectedStatusVersion:Number(b.dataset.statusVersion)},'DELETE');closeModal();reviewingDocument=null;await refreshData();if(location.hash==='#library')libraryPage();toast('已删除本次上传资料，现有项目保持不变');return;}
 if(act==='test-openai'){b.disabled=true;try{const status=await api('/openai/check',{});$('#openai-config-feedback').textContent='连接成功 · '+status.model;}finally{b.disabled=false;}return;}
 if(act==='parse-document'){b.disabled=true;try{const result=await api('/documents/'+b.dataset.id+'/parse',{});applyDocumentSnapshots([result.document]);toast('已加入自动整理队列');await documentDialog(b.dataset.id,true);}finally{b.disabled=false;}return;}
 if(act==='resume-document-draft'){const doc=await api('/documents/'+b.dataset.id);if(!doc.projectDraft)throw new Error('草稿已发布，请刷新资料');openDocumentDraft(doc.id,doc.projectDraft);return;}
