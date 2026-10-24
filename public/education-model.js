@@ -33,11 +33,11 @@ export const normalizeName = value => String(value??'').normalize('NFKC').toLowe
 const diploma=(id,label,values,group='curriculum')=>({id,label,field:'qualification',values,group,subgroup:group==='education'?'高等教育学历':undefined});
 const education=(id,label,fields)=>({id,label,field:fields[0],fields,group:'education'});
 export const qualificationTypes = [
-  diploma('ib','IB Diploma',['IB Diploma','International Baccalaureate Diploma','International Baccalaureate Full Diploma','International Baccalaureate','IB','IB完整文凭']),
-  diploma('gce-alevel','UK GCE A-Level',['GCE A-Level','GCE A-levels','GCE Advanced Level','GCE Advanced Levels','General Certificate of Education Advanced Level','General Certificate of Education Advanced Level (GCE A-Level) in U.K.','GCE A level (United Kingdom)','UK GCE A-Level','UK GCE AS and A levels','GCE AS Level','UK GCE AS Level','GCE A-Level（具英国大学入学资格）','GCE A Levels（须获认可为英国大学入学资格）']),
-  diploma('international-alevel','International A-Level',['International A-Level','International A-Levels','International General Certificate of Education Advanced Level','International AS and A levels','International AS Level','International GCE A-Level','International GCE Advanced Level','Cambridge International A Levels','Cambridge International AS and A Levels','Pearson Edexcel International A Levels']),
-  diploma('abitur','Abitur',['Abitur','German Abitur','德国Abitur','Abitur (Germany)']),
-  diploma('baccalaureate','French Baccalaureate',['Baccalaureate','Baccalauréat','French Baccalaureate','French Baccalauréat','Baccalauréat (France)','French Baccalauréat (France)','Baccalaureate Diploma','法国Baccalaureate Diploma']),
+  diploma('ib','IB Diploma',['IB Diploma','International Baccalaureate Diploma','International Baccalaureate Full Diploma','International Baccalaureate','IB','IB完整文凭','Swiss International Baccalaureate','International Baccalaureate（完整IB Diploma）']),
+  diploma('gce-alevel','UK GCE A-Level',['GCE A-Level','GCE A-levels','GCE Advanced Level','GCE Advanced Levels','General Certificate of Education Advanced Level','General Certificate of Education Advanced Level (GCE A-Level) in U.K.','GCE A level (United Kingdom)','UK GCE A-Level','UK GCE AS and A levels','GCE AS Level','UK GCE AS Level','GCE A-Level（具英国大学入学资格）','GCE A Levels（须获认可为英国大学入学资格）','GCE Advanced Level (A-Level)','General Certificate of Education (GCE) Advanced Level (A-Level)','General Certificate of Education Advanced Level（GCE A Level）','GCE A Level results']),
+  diploma('international-alevel','International A-Level',['International A-Level','International A-Levels','International General Certificate of Education Advanced Level','International AS and A levels','International AS Level','International GCE A-Level','International GCE Advanced Level','Cambridge International A Levels','Cambridge International AS and A Levels','Pearson Edexcel International A Levels','International A Level results']),
+  diploma('abitur','Abitur',['Abitur','German Abitur','德国Abitur','Abitur (Germany)','Abitur Certificate']),
+  diploma('baccalaureate','French Baccalaureate',['Baccalaureate','Baccalauréat','French Baccalaureate','French Baccalauréat','Baccalauréat (France)','French Baccalauréat (France)','Baccalaureate Diploma','法国Baccalaureate Diploma','Baccalauréat Diploma']),
   diploma('european-baccalaureate','European Baccalaureate',['European Baccalaureate','European Baccalaureate Diploma']),
   diploma('ossd','OSSD',['OSSD','Ontario Secondary School Diploma']),
   diploma('dse','HKDSE',['DSE','HKDSE','Hong Kong Diploma of Secondary Education','Hong Kong Secondary School (High School) Diploma']),
@@ -92,18 +92,22 @@ export function qualificationType(name){return qualificationTypes.find(t=>t.id==
 export function qualificationVariant(name){
   const type=qualificationType(name);
   if(!type)return qualificationNameKey(name);
-  if(type.id.endsWith('alevel'))return /AS\s*(?:and|&)\s*A/i.test(name)?'as-and-a':/\bAS\s*[- ]?Level/i.test(name)?'as':/英国大学入学资格/.test(name)?'uk-entry':'full';
+  if(type.id.endsWith('alevel'))return /AS\s*(?:and|&)\s*A/i.test(name)?'as-and-a':/\bAS\s*[- ]?Level/i.test(name)?'as':/英国大学入学资格/.test(name)?'uk-entry':/\bresults\b/i.test(name)?'results':'full';
   return type.id;
 }
 export function qualificationAwardingBody(name){return /\bCambridge\b/i.test(name)?'Cambridge':/\b(?:Pearson|Edexcel)\b/i.test(name)?'Pearson Edexcel':'';}
 export const frenchQualificationName=name=>/French|France|法国/i.test(name);
-export function canonicalAccreditor(name){return /^Cognia[（(]/i.test(name)?'Cognia':commonAccreditors.find(n=>normalizeName(n)===normalizeName(name))||name;}
+const accreditorNames={WASC:'Western Association of Schools and Colleges',NEASC:'New England Association of Schools and Colleges',CIS:'Council of International Schools',ACSI:'Association of Christian Schools International',COBIS:'Council of British International Schools'};
+export function canonicalAccreditor(name){
+  if(/^Cognia\s*[（(]/i.test(name))return 'Cognia';
+  return commonAccreditors.find(n=>[n,...(accreditorNames[n]?[accreditorNames[n],`${accreditorNames[n]} (${n})`]:[])].some(v=>normalizeName(v)===normalizeName(name)))||name;
+}
 export function studentQualifications(student){
   if(Array.isArray(student.qualifications))return student.qualifications.map((q,i)=>({...q,id:q.id||`qualification-${i}`,type:qualificationType(q.name)?.id||q.type||'other'}));
   if(!student.qualification)return [];
   const type=qualificationType(student.qualification);
   const variant=qualificationVariant(student.qualification);
-  return [{id:'legacy-qualification',type:type?.id||'other',name:student.qualification,status:student.educationStatus||'',date:student.graduationDate||'',level:type?.id.endsWith('alevel')?(variant==='as-and-a'?'unknown':variant==='as'?'as':'full'):'',complete:type&&!['ib','internationalbaccalaureate'].includes(normalizeName(student.qualification))?true:null,legacy:true}];
+  return [{id:'legacy-qualification',type:type?.id||'other',name:student.qualification,status:student.educationStatus||'',date:student.graduationDate||'',level:type?.id.endsWith('alevel')?(['as-and-a','results'].includes(variant)?'unknown':variant==='as'?'as':'full'):'',complete:type&&!['ib','internationalbaccalaureate','swissinternationalbaccalaureate'].includes(normalizeName(student.qualification))?true:null,legacy:true}];
 }
 export function studentAccreditations(student){
   return Array.isArray(student.accreditations)?student.accreditations:student.accreditation?[{name:student.accreditation,scope:null,legacy:true}]:[];
