@@ -11,7 +11,7 @@ test('upload → automatic organization → overall confirmation, configuration 
  t.after(async()=>{child.kill();await once(child,'exit').catch(()=>{});});
  await Promise.race([once(child.stdout,'data'),once(child,'exit').then(()=>{throw new Error('server exited early');})]);
  let cookie='',csrf='';const base='http://127.0.0.1:3224';
- async function req(path,body){const res=await fetch(base+'/api'+path,{method:body?'POST':'GET',headers:{'Content-Type':'application/json','X-SGU-Request':'1','X-CSRF-Token':csrf,Cookie:cookie},...(body?{body:JSON.stringify(body)}:{})});return {status:res.status,headers:res.headers,body:await res.json()};}
+ async function req(path,body,method){const res=await fetch(base+'/api'+path,{method:method||(body?'POST':'GET'),headers:{'Content-Type':'application/json','X-SGU-Request':'1','X-CSRF-Token':csrf,Cookie:cookie},...(body?{body:JSON.stringify(body)}:{})});return {status:res.status,headers:res.headers,body:await res.json()};}
  const registration=await req('/auth/register',{login:'reviewer',password:'AutoTest26'});cookie=registration.headers.get('set-cookie').split(';')[0];csrf=registration.body.csrf;
  const waitFor=async(id,status)=>{for(let i=0;i<100;i++){const d=(await req('/documents/'+id)).body;if(d.status===status)return d;if(d.status==='error'&&status!=='error')throw new Error(d.error);await delay(20);}throw new Error('timeout waiting for '+status);};
  const student=(await req('/students',{student:{id:'preserved',name:'完整保留的学生',notes:'不可被上传文档清空'}})).body;
@@ -33,4 +33,15 @@ test('upload → automatic organization → overall confirmation, configuration 
  assert.equal((await req('/openai',{apiKey:'sk-should-not-replace',model:'gpt-6.1-sol'})).status,403);
  const failure=(await req('/documents',{filename:'failure.txt',base64:Buffer.from(admissionsText+'\nTEST_MODEL_ERROR').toString('base64')})).body;
  const failed=await waitFor(failure.id,'error');assert.match(failed.error,/额度/);assert.ok(failed.text.length);assert.equal((await req('/documents')).body.find(d=>d.id===failure.id).status,'error');assert.equal((await req('/bootstrap')).body.programs.length,7);
+ const replacement=(await req('/documents',{filename:'same-content-new-name.md',base64:Buffer.from(admissionsText).toString('base64')})).body;
+ const replacementReview=await waitFor(replacement.id,'review');assert.ok(replacementReview.autoReview.entries.every(e=>e.mode==='update'));assert.ok(replacementReview.duplicateUploads.some(d=>d.id===upload.id));
+ const update=await req('/documents/'+replacement.id+'/confirm',{expectedReviewVersion:replacementReview.autoReview.version,confirmed:true,action:'update'});
+ assert.equal(update.status,200);assert.ok(update.body.programs.every(p=>p.version===2));assert.equal((await req('/bootstrap')).body.programs.length,7);
+ const discard=(await req('/documents',{filename:'discard-duplicate.md',base64:Buffer.from(admissionsText).toString('base64')})).body;
+ const discardReview=await waitFor(discard.id,'review');const deletion={expectedStatusVersion:discardReview.statusVersion};
+ const savedCsrf=csrf;csrf='incorrect';assert.equal((await req('/documents/'+discard.id,deletion,'DELETE')).status,403);csrf=savedCsrf;
+ const savedCookie=cookie;cookie='';assert.equal((await req('/documents/'+discard.id,deletion,'DELETE')).status,401);cookie=savedCookie;
+ assert.equal((await req('/documents/'+discard.id,deletion,'DELETE')).status,200);assert.equal((await req('/documents/'+discard.id)).status,404);
+ assert.ok(!(await req('/documents')).body.some(d=>d.id===discard.id));assert.equal((await req('/bootstrap')).body.programs.length,7);
+ const publishedDoc=(await req('/documents/'+replacement.id)).body;assert.equal((await req('/documents/'+replacement.id,{expectedStatusVersion:publishedDoc.statusVersion},'DELETE')).status,409);
 });

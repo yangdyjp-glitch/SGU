@@ -1,8 +1,8 @@
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { resolve, extname, sep } from 'node:path';
-import { randomUUID } from 'node:crypto';
-import { db,now,transaction,event,getPrograms,getProgram,listStudents,getStudent,saveStudent,saveProgram,passwordHash,passwordVerify,newSession,sessionUser,hashToken,getDocuments,getDocument,getDocumentSummaries,saveDocument } from './lib/store.mjs';
+import { randomUUID, createHash } from 'node:crypto';
+import { db,now,transaction,event,getPrograms,getProgram,getProgramVersions,listStudents,getStudent,saveStudent,saveProgram,passwordHash,passwordVerify,newSession,sessionUser,hashToken,getDocuments,getDocument,getDocumentSummaries,saveDocument } from './lib/store.mjs';
 import { matchAll,checkCombination,validateProgram,validDate } from './lib/engine.mjs';
 import { validateStudentEducation } from './lib/education.mjs';
 import { parseQuery,queryPrograms,parseStudentText } from './lib/query.mjs';
@@ -13,6 +13,7 @@ import { prepareDocumentDraft, validateDocumentScope } from './lib/document-draf
 import { openAIStatus, saveOpenAIConfig, checkOpenAIConnection } from './lib/openai-config.mjs';
 import { documentWorkflow } from './lib/document-workflow.mjs';
 import { confirmDocument } from './lib/document-publish.mjs';
+import { getReviewDocument, chooseDocumentAssociation, deleteUploadedDocument } from './lib/document-review-service.mjs';
 import { configureNetwork } from './lib/network.mjs';
 import { createRequestOrigin } from './lib/request-origin.mjs';
 import { loadFile, saveFile } from './lib/file-store.mjs';
@@ -91,7 +92,7 @@ const server=http.createServer(async(req,res)=>{
     return saveProgram(body.program,actor,body.note.trim(),body.expectedVersion,undefined,sourceDocument);
     });return send(res,200,saved);
    }
-   if(path==='/api/versions'&&req.method==='GET')return send(res,200,(await db.prepare('SELECT * FROM versions ORDER BY created_at DESC,version DESC').all()).filter(r=>!url.searchParams.get('programId')||r.program_id===url.searchParams.get('programId')).map(r=>({...r,data:JSON.parse(r.data)})));
+   if(path==='/api/versions'&&req.method==='GET')return send(res,200,await getProgramVersions(url.searchParams.get('programId')));
    if(path==='/api/restore'&&req.method==='POST'){
     const row=(await db.prepare('SELECT * FROM versions WHERE program_id=? AND version=?').get(body.programId,body.version));if(!row)fail('历史版本不存在',404);const p=JSON.parse(row.data);const errors=validateProgram(p);if(errors.length)fail(errors.join('；'));return send(res,200,await saveProgram(p,actor,`回档到v${body.version}：${String(body.note||'恢复已核对版本')}`,body.expectedVersion,body.version));
    }
@@ -99,10 +100,12 @@ const server=http.createServer(async(req,res)=>{
    if(path==='/api/documents'&&req.method==='GET')return send(res,200,await getDocumentSummaries());
    if(path==='/api/documents'&&req.method==='POST'){
     if(!/\.(pdf|md|txt)$/i.test(body.filename||''))fail('支持PDF、Markdown和TXT');if(typeof body.base64!=='string')fail('未收到文件');const file=Buffer.from(body.base64,'base64');if(file.length>25*1024*1024)fail('文件最大25MB',413);if(extname(body.filename).toLowerCase()==='.pdf'&&!file.subarray(0,1024).includes(Buffer.from('%PDF-')))fail('文件不是有效PDF');
-    const id=randomUUID(),storageName=id+extname(body.filename).toLowerCase();const doc={id,filename:body.filename.slice(0,200),name:body.filename.slice(0,200),storageName,uploadedBy:actor,uploadedAt:now(),status:'uploaded',size:file.length};await transaction(async()=>{await saveFile(storageName,file);await saveDocument(doc);await event('document',doc.filename,actor,{action:'上传'});});return send(res,201,documentSummary(await documentWorkflow.enqueue(id,actor)));
+    const id=randomUUID(),storageName=id+extname(body.filename).toLowerCase();const doc={id,filename:body.filename.slice(0,200),name:body.filename.slice(0,200),storageName,fileHash:createHash('sha256').update(file).digest('hex'),uploadedBy:actor,uploadedAt:now(),status:'uploaded',size:file.length};await transaction(async()=>{await saveFile(storageName,file);await saveDocument(doc);await event('document',doc.filename,actor,{action:'上传'});});return send(res,201,documentSummary(await documentWorkflow.enqueue(id,actor)));
    }
    if(path.startsWith('/api/documents/')&&path.endsWith('/parse')&&req.method==='POST'){const doc=await documentWorkflow.enqueue(path.split('/')[3],actor,{feedback:body.feedback,expectedReviewVersion:body.expectedReviewVersion});return send(res,202,{ok:true,document:documentSummary(doc)});}
    if(path.startsWith('/api/documents/')&&path.endsWith('/confirm')&&req.method==='POST'){const result=await confirmDocument(path.split('/')[3],body,actor);return send(res,200,{...result,document:documentSummary(result.document)});}
+   if(/^\/api\/documents\/[^/]+\/association$/.test(path)&&req.method==='POST')return send(res,200,await chooseDocumentAssociation(path.split('/')[3],body,actor));
+   if(/^\/api\/documents\/[^/]+$/.test(path)&&req.method==='DELETE')return send(res,200,await deleteUploadedDocument(path.split('/')[3],body,actor));
    if(path.startsWith('/api/documents/')&&path.endsWith('/draft')&&req.method==='POST'){
     const draft=await transaction(async()=>{
     const doc=await getDocument(path.split('/')[3]);if(!doc||doc.builtin)fail('请选择上传文件');
@@ -111,7 +114,7 @@ const server=http.createServer(async(req,res)=>{
     await saveDocument(doc);await event('document',doc.filename,actor,{action:'保存项目草稿',school:draft.target.school,year:draft.target.year});return draft;});
     return send(res,200,draft);
    }
-   if(path.startsWith('/api/documents/')&&req.method==='GET'){const doc=await getDocument(path.split('/').pop());if(!doc)fail('资料不存在',404);return send(res,200,documentForReview(doc,await getPrograms()));}
+   if(path.startsWith('/api/documents/')&&req.method==='GET'){const doc=await getReviewDocument(path.split('/').pop());return send(res,200,documentForReview(doc,await getPrograms()));}
    if(path==='/api/export'&&req.method==='GET')return send(res,200,{exportedAt:now(),programs:await getPrograms(),students:await listStudents(),versions:(await db.prepare('SELECT * FROM versions').all()),matches:(await db.prepare('SELECT * FROM matches').all()),events:(await db.prepare('SELECT * FROM events').all())},{'Content-Disposition':'attachment; filename="sgu-backup.json"'});
    fail('接口不存在',404);
   }
