@@ -3,7 +3,7 @@ import { groupSchools, createSchoolOverview, schoolHref } from './school-detail.
 import { mountSchoolOverview } from './school-overview.js';
 import { setupTableScrolling } from './table-scroll.js';
 import { conciseText, renderReadableText, setupReadableCopy } from './plain-language.js';
-import { buildProgramTitles, programTitle, programEntryLabel, programOriginalTitle } from './program-presentation.js';
+import { buildProgramTitles, programTitle, programFullName, programEntryLabel, programOriginalTitle } from './program-presentation.js';
 import { createProjectDrawer } from './project-drawer.js';
 import { buildQualificationCatalog, buildQualificationRows } from './qualification-matrix.js';
 import { renderDocumentReview, renderDocumentStatus, matchingDocumentPrograms, documentUrl } from './document-review.js';
@@ -69,7 +69,7 @@ function programsPage(){
 }
 function renderProgramRows(){
  const q=($('#program-search')?.value||'').trim().toLowerCase(),intake=$('[name="program-intake"]')?.value;
- const schools=groupSchools(data.programs).filter(s=>s.programs.some(p=>[s.name,displayTitle(p),programEntryLabel(p),p.code,p.id,p.name,p.englishName,p.direction,p.channel].join(' ').toLowerCase().includes(q)&&(!intake||p.rounds.some(r=>r.intake===intake))));
+ const schools=groupSchools(data.programs).filter(s=>s.programs.some(p=>[s.name,displayTitle(p),programFullName(p),programEntryLabel(p),p.code,p.id,p.name,p.englishName,p.direction,p.channel].join(' ').toLowerCase().includes(q)&&(!intake||p.rounds.some(r=>r.intake===intake))));
  $('#program-list').innerHTML=schools.length?schools.map(s=>`<article class="school-card"><div class="school-card-title"><div class="school-emblem">${icon('school')}</div><div><h2><a href="${schoolHref(s.name)}">${esc(s.name)}</a></h2><p>${[...new Set(s.programs.map(p=>p.year))].sort().map(esc).join(' / ')} 入学 · ${s.offerings.length} 个已收录项目</p></div><a class="btn primary sm" href="${schoolHref(s.name)}">查看学校 ${icon('chevron')}</a></div><div class="school-card-programs">${s.offerings.slice(0,8).map(p=>`<span title="${esc(programOriginalTitle(p.programs[0]))}"><strong>${esc(p.title)}</strong><small class="school-program-channels">${esc(p.entry)}</small></span>`).join('')}${s.offerings.length>8?`<a href="${schoolHref(s.name)}">查看全部 ${s.offerings.length} 个项目 ${icon('chevron')}</a>`:''}</div><p class="school-card-foot">学历资格 · 语言与豁免 · 申请材料 · 申请轮次 · 项目特殊要求</p></article>`).join(''):empty('没有符合筛选条件的学校');
 }
 function schoolPage(name){

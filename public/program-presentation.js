@@ -1,7 +1,8 @@
 // Presentation only: channel, IDs and admission rules remain on each record.
 import { programAbbreviation } from './program-abbreviations.js';
+import { compactSubject } from './program-short-names.js';
 const clean = value => String(value || '').trim().replace(/\s+/g, ' ');
-export const programCode = programAbbreviation;
+export const programCode = p => programAbbreviation(p) || compactSubject(p,programSubjectName(p)).abbreviation;
 export const programOriginalTitle = p => [...new Set([p.name, p.englishName, p.channel, p.code].map(clean).filter(Boolean))].join(' · ');
 // Entry groups only control presentation. They never merge records or rules.
 export const programEntryGroup = p => /编入|转入|transfer/i.test(p.channel || '') ? 'transfer' : 'application';
@@ -25,7 +26,7 @@ export function programEntryLabel(program) {
   return [entry, languages, type, mode].filter(Boolean).join(' · ');
 }
 
-export function programShortName(p) {
+function programSubjectName(p) {
   const raw = clean(p.name || p.englishName);
   if (!raw) return '';
   if (/^本科项目[（(]原文未注明具体学院或专业[）)]$/.test(raw)) return '本科项目（专业未注明）';
@@ -52,6 +53,25 @@ export function programShortName(p) {
   name = name.replace(/项目[（(]([^）)]+?)(?:课程)?[）)]$/, '（$1）');
   name = name.replace(/^[·・:：\s]+|[·・:：\s]+$/g, '');
   return name || raw;
+}
+
+export const programShortName = p => compactSubject(p,programSubjectName(p)).label;
+
+export function programFullName(p) {
+  const code=programAbbreviation(p),subject=programSubjectName(p);
+  if(code==='TAISI')return '社会创新跨国与跨学科研究';
+  if(code==='PEARL')return '经济学（联盟、研究与领导力）';
+  if(code==='Kyoto iUP'||subject==='Kyoto iUP')return '国际本科项目';
+  if(code==='GIGA')return /Policy Management|综合政策/i.test((p.name||'')+' '+(p.englishName||''))?'综合政策':/Environment and Information|环境信息/i.test((p.name||'')+' '+(p.englishName||''))?'环境信息':subject;
+  if(code==='GLS'&&subject==='国际（GLS）')return '全球教养研究';
+  if(p.school==='名古屋大学'&&['化学','社会科学'].includes(subject))return clean(p.name)||subject;
+  return subject;
+}
+
+export function renderProgramOverviewName(p, shortTitle, esc) {
+  const code=programCode(p),short=code&&shortTitle===programTitle(p)&&shortTitle.startsWith(code+' · ')?code:shortTitle;
+  const full=programFullName(p),showFull=full&&full!==short&&!short.endsWith(' · '+full);
+  return `<span class="school-project-name"><strong class="program-short-name" data-program-short>${esc(short)}</strong>${showFull?`<span class="program-full-name" data-program-full>${esc(full)}</span>`:''}</span>`;
 }
 
 const faculty = p => clean(p.name).match(/^(.+?(?:学院|学部|学群))/)?.[1] || '';

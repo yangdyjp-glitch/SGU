@@ -10,6 +10,9 @@
 .school-program-table td{font-size:14px}.school-program-table td:not(:first-child){white-space:normal;overflow-wrap:anywhere}
 .school-program-table .school-project-link{align-items:flex-start;min-width:0;gap:8px;line-height:1.6}
 .school-project-link strong{max-width:30%;overflow-wrap:anywhere}.school-project-link>span{flex:1;min-width:0}.school-project-link svg{flex-shrink:0;margin-top:5px}
+.school-project-name{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 12px}
+.school-project-link .program-short-name{min-width:0;max-width:100%;flex:0 0 auto;color:var(--pine);font-weight:650}
+.school-project-name .program-full-name{min-width:0;max-width:100%;font-weight:400;color:var(--ink);overflow-wrap:anywhere}
 .project-entry{font-size:12px;line-height:1.5;color:var(--pine);background:#edf4f0;border-radius:4px;padding:3px 7px;display:inline-block;max-width:100%}
 .program-original{margin-top:8px;font-size:12px;color:var(--muted);max-width:700px}.program-original summary{cursor:pointer}.program-original dl{display:grid;grid-template-columns:64px minmax(0,1fr);gap:5px 12px;margin-top:8px;line-height:1.6}.program-original dt,.program-original dd{margin:0;overflow-wrap:anywhere}
 .school-project-empty{padding:16px;color:var(--muted);font-size:13px}
