@@ -2,6 +2,7 @@ import { renderLanguageScoreTable } from './score-table.js';
 import { renderInfoHint } from './detail-hints.js';
 import { tuitionText } from './tuition.js';
 import { renderReadableText } from './plain-language.js';
+import { renderAcademicScores } from './academic-scores.js';
 
 export const admissionLabels={school:'学校',year:'入学年份',name:'项目名称',channel:'招生方式',paths:'学历资格',hardConditions:'身份与附加条件',language:'语言成绩',languageRequirement:'英语证明要求',waivers:'语言豁免',rounds:'申请轮次',materials:'申请材料',requirements:'全部要求',languagePolicy:'成绩有效期与形式',graduationPolicy:'资格取得时间',academicTests:'学术考试',interview:'选拔方式',tuition:'学费',combination:'同时申请与再次申请',coverage:'整理范围'};
 export const sourceUrl=source=>`${source?.sourceId==='aohb27'?'/sources/aohb27.pdf':'/uploads/'+encodeURIComponent(source?.sourceId||'')}${source?.page?'#page='+parseInt(source.page):''}`;
@@ -24,6 +25,7 @@ export function readableAdmissionValue(value){
  if(value.exam)return `${value.exam}：${value.score===null?'最低分未注明':'≥ '+value.score}（${value.basis}）`+['reading','listening','writing','speaking'].map((key,i)=>value[key]===null||value[key]===undefined?'':`；${['阅读','听力','写作','口语'][i]} ${value[key]}`).join('')+(value.note?'；'+value.note:'');
  if(Object.hasOwn(value,'applyEnd'))return `${value.intake||'入学期待定'} 第${value.period}轮：${value.applyStart||'待定'} 至 ${value.applyEnd||'待定'}；${value.note||''}`;
  if(value.field)return ruleText(value);
+ if(value.qualification&&value.admissionStatus)return `${value.qualification}${value.variant?'（'+value.variant+'）':''}：申请 ${value.admissionText||'未列最低分'}；奖学金 ${value.scholarshipText||'未列成绩门槛'}；${value.conditions||''}`;
  if(value.topic)return `${value.stage||''} ${value.topic}：${value.detail}`;
  if(value.label)return value.label+(value.note?'：'+value.note:'');
  if(Object.hasOwn(value,'amount')&&Object.hasOwn(value,'currency')&&Object.hasOwn(value,'period'))return tuitionText(value);
@@ -41,11 +43,12 @@ export function renderAdmissionContent(p,ui,issues=[]){
  const scoreUI={...ui,evidence:source,scoreRowClass:(_row,i)=>marked('/language/'+i)};
  const language=section('language','语言考试',`<p class="muted small">英语证明：${esc(policyLabels[p.languageRequirement])}。总分及已列出的单项须同时满足；未注明不等于不要求。</p>${p.language.length?renderLanguageScoreTable(p.language,scoreUI):'<p class="muted small">未列出考试门槛</p>'}`);
  const policy=(key)=>{
-  const value=p[key],detail=value?.detail;
+  const value=key==='academicTests'?Object.fromEntries(Object.entries(p[key]||{}).filter(([k])=>!['scoreDetails','scholarshipGrades','scoreReview'].includes(k))):p[key],detail=value?.detail;
   // Keep every field available for review without printing a long explanation
   // and the same policy fields as one unreadable sentence.
   const body=detail?`${copy(detail)}${Object.keys(value).some(k=>!['detail','source'].includes(k))?`<details class="policy-facts" ${marked('/'+key)?'open':''}><summary>补充信息</summary><p>${copy(readableAdmissionValue({...value,detail:undefined}))}</p></details>`:''}`:copy(readableAdmissionValue(value));
-  return section(key,admissionLabels[key],`<div>${body} ${source(value?.source)}</div>`);
+  const scores=key==='academicTests'&&(p[key]?.scoreDetails?.length||p[key]?.scholarshipGrades?.length)?renderAcademicScores([p],{...ui,evidence:source,academicRowClass:row=>marked('/academicTests/scoreDetails/'+p.academicTests.scoreDetails.findIndex(r=>r.id===row.id))}):'';
+  return section(key,admissionLabels[key],`<div>${body} ${source(value?.source)}</div>${scores}`);
  };
  const waivers=section('waivers','语言豁免',lines(p.waivers,'waivers',row=>`<strong>${esc(row.label)}</strong>${renderInfoHint(row.label,row.all.map(r=>({text:ruleText(r)+(r.referenceDate?'；基准日 '+r.referenceDate:'')})),esc)}`));
  const rounds=section('rounds','申请轮次',p.rounds.length?`<div class="table-wrap"><table class="admission-rounds"><thead><tr><th>入学期 / 轮次</th><th>申请开始</th><th>申请截止</th><th>入学日期</th><th>初筛 / 面试 / 结果</th><th>备注</th></tr></thead><tbody>${p.rounds.map((r,i)=>`<tr class="${marked('/rounds/'+i)}"><td>${esc(r.intake||'待确定')} · 第${esc(r.period)}轮</td><td>${esc(r.applyStart||'待确定')} ${esc(r.startTime||'')}</td><td>${esc(r.applyEnd||'待确定')} ${esc(r.endTime||'')}</td><td>${esc(r.enrollmentDate||'待确定')}</td><td>${[r.first,r.interview,r.final].map(v=>esc(v||'未注明')).join(' / ')}</td><td>${esc([r.timezone,r.note].filter(Boolean).join('；'))} ${source(r.source)}</td></tr>`).join('')}</tbody></table></div>`:'<p class="muted small">未列出申请轮次，暂不生成轮次匹配。</p>');

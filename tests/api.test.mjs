@@ -5,11 +5,12 @@ import { once } from 'node:events';
 import { exampleStudents } from './fixtures/students.mjs';
 import { randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
-const base='http://127.0.0.1:3222';
+import { createServer } from 'node:net';
 test('authenticated team workflow, version history, conflicts and ingestion',async t=>{
+ const reservation=createServer();await new Promise(resolve=>reservation.listen(0,'127.0.0.1',resolve));const port=reservation.address().port;await new Promise(resolve=>reservation.close(resolve));const base='http://127.0.0.1:'+port;
  const pgURL=process.env.SGU_TEST_DATABASE_URL||'',pgSchema='sgu_test_api_'+randomUUID().replaceAll('-','');
- const child=spawn(process.execPath,['server.mjs'],{env:{...process.env,DATABASE_URL:pgURL,DATABASE_SCHEMA:pgURL?pgSchema:'',PORT:'3222',HOST:'127.0.0.1',DATA_DIR:'.qa/test-'+randomUUID(),MINERU_BIN:'',OPENAI_API_KEY:'',APP_ORIGIN:'',RAILWAY_PUBLIC_DOMAIN:'',COOKIE_SECURE:''},stdio:['ignore','pipe','pipe'],windowsHide:true});
- t.after(async()=>{child.kill();await once(child,'exit').catch(()=>{});if(pgURL){const {openDatabase}=await import('../lib/database.mjs');const cleanup=await openDatabase({url:pgURL,schema:pgSchema});try{await cleanup.exec(`DROP SCHEMA IF EXISTS ${pgSchema} CASCADE`);}finally{await cleanup.close();}}});
+ const child=spawn(process.execPath,['server.mjs'],{env:{...process.env,DATABASE_URL:pgURL,DATABASE_SCHEMA:pgURL?pgSchema:'',PORT:String(port),HOST:'127.0.0.1',DATA_DIR:'.qa/test-'+randomUUID(),MINERU_BIN:'',OPENAI_API_KEY:'',APP_ORIGIN:'',RAILWAY_PUBLIC_DOMAIN:'',COOKIE_SECURE:''},stdio:['ignore','pipe','pipe'],windowsHide:true});
+ t.after(async()=>{if(child.exitCode===null&&child.signalCode===null){child.kill();await once(child,'exit').catch(()=>{});}if(pgURL){const {openDatabase}=await import('../lib/database.mjs');const cleanup=await openDatabase({url:pgURL,schema:pgSchema});try{await cleanup.exec(`DROP SCHEMA IF EXISTS ${pgSchema} CASCADE`);}finally{await cleanup.close();}}});
  await Promise.race([once(child.stdout,'data'),once(child,'exit').then(()=>{throw new Error('server exited early');})]);
  let cookie='',csrf='';
  async function req(path,body,extra={}){const res=await fetch(base+'/api'+path,{method:body?'POST':'GET',headers:{'Content-Type':'application/json','X-SGU-Request':'1','X-CSRF-Token':csrf,Cookie:cookie,Origin:base,...extra},...(body?{body:JSON.stringify(body)}:{})});return {status:res.status,headers:res.headers,body:await res.json()};}
@@ -57,6 +58,14 @@ test('authenticated team workflow, version history, conflicts and ingestion',asy
   assert.deepEqual((await req('/events')).body.filter(e=>e.subject===upload.filename).map(e=>e.detail.status).filter(Boolean).sort(),['error','error','parsing','parsing','queued','queued']);
  });
  await t.test('audit and backups contain rule and match history',async()=>{assert.ok((await req('/events')).body.some(x=>x.kind==='restore'));const backup=await req('/export');assert.ok(backup.body.matches.length);assert.ok(backup.body.versions.length>5);assert.equal(backup.body.users,undefined);});
+ await t.test('academic and scholarship scores round-trip in existing program versions and restore safely',async()=>{
+  const p=(await req('/bootstrap')).body.programs.find(p=>p.id==='GLA'),academic=structuredClone(p.academicTests),oldVersion=p.version;
+  p.academicTests={...p.academicTests,scoreDetails:[{id:'ib',qualification:'IB Diploma',variant:'完整文凭',admissionStatus:'minimum',admissionText:'≥28／45',scholarshipStatus:'minimum',scholarshipText:'≥35／45',scholarshipName:'测试奖学金',conditions:'满足规定科目和最终成绩',source:{sourceId:'aohb27',page:'1',quote:'测试依据'}}],scholarshipGrades:[]};
+  const save=await req('/programs',{program:p,expectedVersion:oldVersion,note:'测试成绩双列与版本兼容'});assert.equal(save.status,200);assert.equal(save.body.version,oldVersion+1);
+  const loaded=(await req('/bootstrap')).body.programs.find(x=>x.id===p.id);assert.deepEqual(loaded.academicTests,p.academicTests);
+  const restored=await req('/restore',{programId:p.id,version:oldVersion,expectedVersion:loaded.version});assert.equal(restored.status,200);assert.deepEqual(restored.body.academicTests,academic);
+  assert.deepEqual((await req('/matches/'+originalMatch.id)).body,originalMatch);
+ });
  await t.test('new-school documents use isolated drafts and publish only after complete review',async()=>{
   const filename='Waseda-2027.md',text='# Application Guide for AO April Entry (Overseas) 2027\n# WASEDA UNIVERSITY\n# School of International Liberal Studies\nTOEFL iBT is accepted.\nThe first language is Japanese.';
   const uploaded=(await req('/documents',{filename,base64:Buffer.from(text).toString('base64')})).body;

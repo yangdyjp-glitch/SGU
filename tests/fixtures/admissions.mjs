@@ -21,7 +21,7 @@ export function admissionsFixture(){
   languageRequirement:'required',languagePolicy:{validYears:2,validAfter:null,validUntil:null,availabilityRequired:true,allowSuperscore:null,excludedFormats:[],detail:'成绩须在申请截止日前两年内取得；拼分政策待核实。',source:source(1,'Scores are valid for two years before the application deadline.')},
   graduationPolicy:{required:true,deadline:'2027-03-31',allowExpected:true,detail:'预计毕业者须在2027年3月31日前完成毕业。',source:source(1,'Graduation must be completed by March 31, 2027. Expected graduation is accepted.')},
   tuition:{status:'unspecified',amount:null,currency:'',period:'',detail:'学费未列明',source:{page:null,quote:''}},
-  academicTests:{status:'optional',detail:'SAT和ACT可选',source:source(2,'SAT and ACT are optional.')},interview:{status:'conditional',detail:'必要时面试',source:source(2,'An interview may be required.')},
+  academicTests:{status:'optional',detail:'SAT和ACT可选',source:source(2,'SAT and ACT are optional.'),scoreDetails:[],scholarshipGrades:[]},interview:{status:'conditional',detail:'必要时面试',source:source(2,'An interview may be required.')},
   combination:{parallel:'unspecified',reapply:'unspecified',materials:'未列明',referenceReuse:'未列明',source:{page:null,quote:''}},coverage:'已整理资格、语言、材料和申请轮次',
   doubts:[{path:'/languagePolicy/allowSuperscore',reason:'是否接受拼分未明确，请核对原文；入库后仍保留待核实。',source:source(2,'The document does not clarify whether superscores are accepted.')}]
  };
