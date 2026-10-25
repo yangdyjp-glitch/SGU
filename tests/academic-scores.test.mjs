@@ -33,7 +33,7 @@ test('legacy and unpublished scores never appear as zero, guaranteed acceptance,
 });
 test('score validation rejects malformed, duplicate and unsupported entries without crashing',()=>{
  assert.deepEqual(validateAcademicScores(project('A')),[]);
- for(const bad of [row({source:{page:'2',quote:''}}),row({admissionText:''}),row({qualification:12}),row({scholarshipStatus:'guaranteed'}),row({admissionText:33})])assert.ok(validateAcademicScores(project('A',[bad])).length);
+ for(const bad of [row({source:{page:'2',quote:''}}),row({admissionText:''}),row({qualification:12}),row({scholarshipStatus:'guaranteed'}),row({admissionText:33}),row({id:3}),row({references:{}}),row({references:[{}]}),row({requirementIds:{}})])assert.ok(validateAcademicScores(project('A',[bad])).length);
  assert.ok(validateAcademicScores(project('A',[row(),row()])).length);
  assert.ok(validateAcademicScores({academicTests:{scoreDetails:{}}}).length);
 });
