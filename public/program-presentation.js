@@ -1,6 +1,18 @@
 // Presentation only: channel, IDs and admission rules remain on each record.
 const clean = value => String(value || '').trim().replace(/\s+/g, ' ');
-export const programCode = p => /^(?:项目|本科项目|未注明|待确认)$/.test(clean(p.code)) ? '' : clean(p.code) || (/^[A-Z][A-Z0-9-]{1,14}$/.test(p.id || '') ? p.id : '');
+const namedProgramCodes=new Set(['IGS','GSEP','JCulP','IGP','GLAP','GTS','GIGA','GLS','GIS','ISP','IUPS','TAISI','ILA','SCOPE','PEARL','SPSF']);
+export const programCode = p => {
+  const raw=clean(p.code),names=clean(p.name)+' '+clean(p.englishName);
+  // Prefer an acronym explicitly written in the source name. Long imported
+  // initialisms are not useful labels; the subject name is clearer. Raw codes
+  // remain unchanged for search, editing, source identity and saved matches.
+  const named=names.match(/[（(]([A-Z][A-Za-z0-9-]{1,9})[）)]/)?.[1]
+    ||names.match(/\b([A-Z][A-Za-z0-9-]{1,9})(?:项目|课程|专攻)/)?.[1]
+    ||(/—SPSF\b/.test(names)?'SPSF':'');
+  if(namedProgramCodes.has(named))return named;
+  if(/^(?:项目|本科项目|未注明|待确认)$/.test(raw)||raw.length>4&&raw!=='FEDPE')return '';
+  return raw||(/^[A-Z][A-Z0-9-]{1,4}$/.test(p.id||'')?p.id:'');
+};
 export const programOriginalTitle = p => [...new Set([p.code, p.name, p.channel].map(clean).filter(Boolean))].join(' · ');
 // Entry groups only control presentation. They never merge records or rules.
 export const programEntryGroup = p => /编入|转入|transfer/i.test(p.channel || '') ? 'transfer' : 'application';
@@ -71,7 +83,8 @@ export function buildProgramNames(programs) {
 }
 
 export function programTitle(p, name = programShortName(p)) {
-  return [...new Set([programCode(p), name].filter(Boolean))].join(' · ') || clean(p.id) || '项目名称未注明';
+  const code=programCode(p);
+  return (code&&name.startsWith(code+'（')?name:[...new Set([code, name].filter(Boolean))].join(' · ')) || clean(p.id) || '项目名称未注明';
 }
 
 function distinguishLabels(programs, labels, suffix, scope = () => '') {

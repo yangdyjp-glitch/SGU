@@ -117,9 +117,9 @@ export function educationReviewContext(s){return JSON.stringify([educationContex
 export function qualificationSummary(student){return studentQualifications(student).map(q=>qualificationType(q.name)?.label||q.name).filter((x,i,a)=>a.indexOf(x)===i).join(' / ');}
 export const isEducationVerification=rule=>rule.field?.startsWith('verification.')&&!['verification.englishRequirement','verification.nonJapaneseNationalityAndPassport','verification.strongProgramMotivation'].includes(rule.field);
 export function qualificationHint(item){
-  if(item.members?.length)return [{text:'各类型分别判断；满足一条完整且适用的资格路径即可，不要求同时具备。未列明的类型需核实，不能等同于不接受。'}];
+  if(item.members?.length)return [{text:'满足任一类型的全部条件即可。未说明是否接受的类型，需向学校核实。'}];
   if(item.id==='accreditation')return [{text:'包含：'+commonAccreditors.join('、')+'。学校认证须覆盖学生实际学校、课程和就读期间，并同时符合教育年限及完成要求。COBIS 等机构的具体认证资格须核实，会员身份不等于认证。'}];
-  if(item.values?.length>1)return [{text:'原始名称：'+item.values.join('；')+'。'},...(item.id.endsWith('alevel')?[{text:'前端归组不代表条件相同。完整 A-Level、仅 AS、预计取得须分别判断；以本项目原文列明的资格、考试机构、科目成绩和取得时间为准。'}]:[{text:'按实际证书、颁发机构、取得状态及项目附加条件判断；原始资格名称完整保留。'}])];
+  if(item.values?.length>1)return [{text:'包含名称：'+item.values.join('；')+'。'},...(item.id.endsWith('alevel')?[{text:'完整 A-Level、仅 AS 和预计取得的要求不同；须核对本项目认可的资格、考试机构、科目、分数和取得日期。'}]:[{text:'须核对实际证书、颁发机构、取得状态及项目要求。'}])];
   return [];
 }
 export function renderQualificationHint(item,esc,scopeParts=[]){

@@ -63,5 +63,5 @@ export function buildImportedProjectView(p) {
   return {paths,academic,waivers,materials,materialNotes:[],materialNoteSources:[],languageFormats:[],post,
     enrollmentSource:p.graduationPolicy?.source,enrollmentDetail:importedPolicyText(p.graduationPolicy,'graduation'),
     languageValidity:importedPolicyText(p.languagePolicy,'language'),allRequirements:p.requirements || [],
-    audience:sophiaFlaEntry(p)?'依据本校本项目要求':'依据本校本通道要求',sourceFor};
+    audience:'以本项目要求为准',sourceFor};
 }

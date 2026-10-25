@@ -1,5 +1,7 @@
 import { buildProjectView, pathDescription } from './requirement-model.js';
 import { renderInfoHint, detailInfoAttribute } from './detail-hints.js';
+import { conciseText } from './plain-language.js';
+import { buildProgramLabels } from './program-presentation.js';
 import { programLabel } from './imported-requirement-model.js';
 import { baseQualifications, educationGroups, educationDisplayGroups, normalizeName as normal, qualificationVariant, canonicalAccreditor, commonAccreditors, qualificationHint } from './education-model.js';
 import {educationPathTypesFor, educationPathKey, educationLabelKey, qualificationCatalogKey, educationCredentialType, fallbackDisplayGroup, unclassifiedDisplayGroup, extraAccreditorLabel} from './education-catalog.js';
@@ -290,7 +292,7 @@ export function buildQualificationDecisionInfo(row,programs,programId,displayLab
   const groups=groupDecisionOptions(cells,true);
   const hints=[...qualificationHint(row),...(row.originalLabels?.length?[{text:'原始路径名称：'+row.originalLabels.join('；')}]:[])];
   return {label:row.label+(programId?' · '+label(programId):''),parts:[
-    {text:'下表逐项说明这类资格是否可用。“可申请”仍须满足对应条件、语言及项目其他要求；“需核实”不表示不接受。'},
+    {text:'“可申请”仍须满足所列条件及项目其他要求；“需核实”表示尚不能确定。'},
     ...groups.map(group=>({title:group.programs.map(label).join(' / '),rows:group.options.map(option=>({...option,status:decisionLabels[option.state],text:option.detail}))})),
     ...(hints.length?[{title:'补充说明',text:hints.map(part=>[part.title,part.text].filter(Boolean).join('\n')).join('\n'),collapsed:true}]:[])
   ]};
@@ -303,7 +305,8 @@ function resultFor(options){
 
 export function renderQualificationMatrix(programs, allPrograms, ui) {
   const { esc, evidence } = ui;
-  const displayLabel=ui.programLabel||programLabel;
+  const labels=ui.programLabel?null:buildProgramLabels(programs);
+  const displayLabel=ui.programLabel||(program=>labels.get(program.id)||programLabel(program));
   const label=id=>displayLabel(programs.find(p=>p.id===id)||{id});
   const rows = buildQualificationDisplayRows(programs, allPrograms);
   const programWidths=programs.map(program=>Math.min(180,Math.max(72,[...displayLabel(program)].reduce((width,char)=>width+(/[^\u0000-\u007f]/.test(char)?13:8.5),28))));
@@ -337,7 +340,7 @@ export function renderQualificationMatrix(programs, allPrograms, ui) {
     // Group membership and complete AND conditions remain in the decision
     // table. Repeating generic reminders here only lengthens the summary.
     if(row.members)return decisions;
-    const groups=row.conditions.map(group=>`<span class="qualification-condition">${!row.members&&scopePrefix(group)?`<strong class="inline-programs">${esc(scopePrefix(group))}</strong>`:''}${esc(conditionText(row,group))}${renderInfoHint(row.label+' · '+group.programs.map(label).join(' / '),group.backgroundNotes,esc)} ${refs(group.sources)}</span>`).join(' ');
+    const groups=row.conditions.map(group=>`<span class="qualification-condition">${!row.members&&scopePrefix(group)?`<strong class="inline-programs">${esc(scopePrefix(group))}</strong>`:''}${esc(conciseText(conditionText(row,group)))}${renderInfoHint(row.label+' · '+group.programs.map(label).join(' / '),group.backgroundNotes,esc)} ${refs(group.sources)}</span>`).join(' ');
     return [decisions,groups].filter(Boolean).join(' ');
   };
   const conditionLine=row=>`<span class="qualification-conditions-line"><span class="qualification-conditions-text">${conditions(row)}</span>${infoButton(()=>buildQualificationDecisionInfo(row,programs,undefined,displayLabel),'qualification-hint qualification-notes-hint','<span aria-hidden="true">!</span>','查看'+row.label+'的完整附加条件与适用说明')}</span>`;

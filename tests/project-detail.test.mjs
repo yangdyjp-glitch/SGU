@@ -122,7 +122,7 @@ test('empty post-entry sections and links disappear; academic deadline appears o
       assert.ok(html.includes(round.enrollmentDate));
       assert.ok(!academic.includes(round.enrollmentDate));
     }
-    assert.match(html, /id="detail-rounds"[\s\S]*资格须在对应入学节点前取得/);
+    assert.match(html, /id="detail-rounds"[\s\S]*须在对应入学日期前取得所需资格/);
   }
 });
 

@@ -66,16 +66,16 @@ export function buildMaterialInfo(group, programs, ui) {
   const title = ui.programTitle || (p=>titles.get(p.id));
   const selected = programs.filter(p=>group.programs.includes(p.id));
   const partsFor = row => {
-    const parts = row.parts?.length ? [...row.parts] : [{title:'适用阶段',text:row.stage||'原文未注明'},{title:'提交说明',text:row.note||row.source?.quote||'请核对原文'}];
+    const parts = row.parts?.length ? [...row.parts] : [{title:'适用阶段',text:row.stage||'原文未注明'},{title:row.note?'提交说明':'原文',text:row.note||row.source?.quote||'请核对原文',raw:!row.note&&Boolean(row.source?.quote)}];
     if(row.when && !parts.some(part=>part.title==='适用条件'))parts.unshift({title:'适用条件',text:(Array.isArray(row.when)?row.when:[row.when]).map(importedRuleText).join('；且 ')});
     return parts;
   };
   return {label:group.label,parts:[
-    {text:'同类材料集中展示，具体文件、份数及提交条件仍按各项目要求。展开条目查看完整说明与原文。'},
+    {text:'展开查看文件、份数和提交条件；同类材料不代表可以互相替代。'},
     {materialVariants:group.variants.map(row=>({
       label:row.label,
       programs:row.programs,
-      status:row.required===false || row.optional===true ? '选交' : row.required===true ? '按适用条件提交' : '按原文要求',
+      status:row.required===false || row.optional===true ? '选交' : row.required===true ? '符合条件时必交' : '是否必交待核实',
       parts:partsFor(row),
       sources:row.sources
     })),programChoices:selected.map(p=>({id:p.id,title:title(p)}))}

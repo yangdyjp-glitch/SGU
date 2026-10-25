@@ -1,13 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { seedPrograms } from '../lib/seed.mjs';
-import { programShortName, programTitle, programEntryLabel, buildProgramNames, buildProgramTitles, buildProgramLabels, renderProgramScope } from '../public/program-presentation.js';
+import { programCode, programOriginalTitle, programShortName, programTitle, programEntryLabel, buildProgramNames, buildProgramTitles, buildProgramLabels, renderProgramScope } from '../public/program-presentation.js';
 import { createSchoolOverview } from '../public/school-detail.js';
 import { renderProjectDetail } from '../public/project-detail.js';
 
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ui={esc,icon:()=>'',button:()=>'',tag:esc,evidence:()=>''};
 const make=(id,name,channel='外国留学生本科书面材料选拔（含线上面试）')=>({...structuredClone(seedPrograms()[0]),id,code:'FEDPE',school:'创价大学',year:2027,name,channel});
+
+test('display uses source acronyms and subject names without changing imported identifiers',()=>{
+  const rows=[{id:'igs',code:'DIGSISIAS',name:'综合科学部国际共创学科（IGS）'},{id:'gsep',code:'GSEPGDTSES',name:'全球科学家与工程师项目',englishName:'Global Scientists and Engineers Program (GSEP)'},{id:'spsf',code:'SPSFDJFH',name:'文学部新闻学科—SPSF'},{id:'plain',code:'DEECEFSE',name:'理工学院电气电子通信工学科'}];
+  const before=JSON.stringify(rows);
+  assert.deepEqual(rows.map(programCode),['IGS','GSEP','SPSF','']);
+  assert.deepEqual(rows.map(p=>programTitle(p)),['IGS · 国际共创','GSEP · 全球科学家与工程师','SPSF · 新闻','电气电子通信工程']);
+  assert.ok(programOriginalTitle(rows[3]).includes('DEECEFSE'));
+  assert.equal(JSON.stringify(rows),before);
+  assert.equal(programTitle({code:'FPMGIGAGP',name:'综合政策学部GIGA项目'}),'GIGA');
+  assert.equal(programCode({code:'FLA',name:'国际教养',englishName:'Liberal Arts (BA)'}),'FLA','a degree is not a project acronym');
+});
 
 test('same-code education subjects get concise, distinct names everywhere without editing source records',()=>{
   const programs=[make('primary','教育学院・初等教育学科'),make('psychology','教育学院・心理与教育学科')],original=JSON.stringify(programs);
