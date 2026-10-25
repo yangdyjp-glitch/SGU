@@ -1,19 +1,8 @@
 // Presentation only: channel, IDs and admission rules remain on each record.
+import { programAbbreviation } from './program-abbreviations.js';
 const clean = value => String(value || '').trim().replace(/\s+/g, ' ');
-const namedProgramCodes=new Set(['IGS','GSEP','JCulP','IGP','GLAP','GTS','GIGA','GLS','GIS','ISP','IUPS','TAISI','ILA','SCOPE','PEARL','SPSF']);
-export const programCode = p => {
-  const raw=clean(p.code),names=clean(p.name)+' '+clean(p.englishName);
-  // Prefer an acronym explicitly written in the source name. Long imported
-  // initialisms are not useful labels; the subject name is clearer. Raw codes
-  // remain unchanged for search, editing, source identity and saved matches.
-  const named=names.match(/[（(]([A-Z][A-Za-z0-9-]{1,9})[）)]/)?.[1]
-    ||names.match(/\b([A-Z][A-Za-z0-9-]{1,9})(?:项目|课程|专攻)/)?.[1]
-    ||(/—SPSF\b/.test(names)?'SPSF':'');
-  if(namedProgramCodes.has(named))return named;
-  if(/^(?:项目|本科项目|未注明|待确认)$/.test(raw)||raw.length>4&&raw!=='FEDPE')return '';
-  return raw||(/^[A-Z][A-Z0-9-]{1,4}$/.test(p.id||'')?p.id:'');
-};
-export const programOriginalTitle = p => [...new Set([p.code, p.name, p.channel].map(clean).filter(Boolean))].join(' · ');
+export const programCode = programAbbreviation;
+export const programOriginalTitle = p => [...new Set([p.name, p.englishName, p.channel, p.code].map(clean).filter(Boolean))].join(' · ');
 // Entry groups only control presentation. They never merge records or rules.
 export const programEntryGroup = p => /编入|转入|transfer/i.test(p.channel || '') ? 'transfer' : 'application';
 export const entryGroupLabel = group => group === 'transfer' ? '编入项目' : '申请项目';
@@ -84,7 +73,14 @@ export function buildProgramNames(programs) {
 
 export function programTitle(p, name = programShortName(p)) {
   const code=programCode(p);
-  return (code&&name.startsWith(code+'（')?name:[...new Set([code, name].filter(Boolean))].join(' · ')) || clean(p.id) || '项目名称未注明';
+  // These umbrella programs contain distinct subjects. Keep the distinction
+  // even when only one subject is shown (e.g. a filtered result or a drawer).
+  if(code==='GIGA') {
+    const subject=/Policy Management|综合政策/i.test(clean(p.englishName)+' '+clean(p.name))?'综合政策':/Environment and Information|环境信息/i.test(clean(p.englishName)+' '+clean(p.name))?'环境信息':'';
+    return subject ? `${code} · ${subject}` : code;
+  }
+  if(['SPSF','IUPS','FEDPE'].includes(code)&&name&&name!==code)return `${code} · ${name}`;
+  return code || name || clean(p.id) || '项目名称未注明';
 }
 
 function distinguishLabels(programs, labels, suffix, scope = () => '') {
@@ -100,6 +96,7 @@ function distinguishLabels(programs, labels, suffix, scope = () => '') {
 export function buildProgramTitles(programs, { contextual = true } = {}) {
   const names = buildProgramNames(programs), titles = new Map(programs.map(p => [p.id, programTitle(p,names.get(p.id))]));
   const scope = p => JSON.stringify([p.school,p.year,...contextual?[]:[programEntryLabel(p)]]);
+  distinguishLabels(programs,titles,p=>names.get(p.id),scope);
   if(contextual)distinguishLabels(programs,titles,programEntryLabel,scope);
   // List rows have a separate entry column; still distinguish any records
   // whose shortened names AND entry labels would otherwise be identical.
@@ -110,7 +107,7 @@ export function buildProgramTitles(programs, { contextual = true } = {}) {
 }
 
 export function buildProgramLabels(programs) {
-  const names=buildProgramNames(programs), labels=new Map(programs.map(p=>[p.id,programCode(p)||names.get(p.id)||p.id]));
+  const names=buildProgramNames(programs), labels=new Map(programs.map(p=>[p.id,programTitle(p,names.get(p.id))]));
   distinguishLabels(programs, labels, p=>names.get(p.id));
   distinguishLabels(programs, labels, programEntryLabel);
   distinguishLabels(programs, labels, p=>`${p.school} ${p.year}`);

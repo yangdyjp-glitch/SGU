@@ -168,8 +168,8 @@ test('Sophia FLA application and transfer are two visible projects with separate
   assert.deepEqual(scores.find(r=>r.score===6.5).programs,[first.id]);
   assert.deepEqual(scores.find(r=>r.score===7.5).programs,[transfer.id]);
   const firstPage=renderProjectDetail(first,{...ui,allPrograms:all}),transferPage=renderProjectDetail(transfer,{...ui,allPrograms:all});
-  assert.match(firstPage,/<h1>FLA · 国际教养学部 · 申请/);assert.doesNotMatch(firstPage,/须完成大学两年且为正式学位生|编入项目专用推荐材料/);
-  assert.match(transferPage,/<h1>FLA · 国际教养学部 · 三年编入/);assert.doesNotMatch(transferPage,/一年级申请须完成十二年教育|申请项目专用推荐材料/);
+  assert.match(firstPage,/<h1>FLA · 申请/);assert.doesNotMatch(firstPage,/须完成大学两年且为正式学位生|编入项目专用推荐材料/);
+  assert.match(transferPage,/<h1>FLA · 三年编入/);assert.doesNotMatch(transferPage,/一年级申请须完成十二年教育|申请项目专用推荐材料/);
   assert.equal(JSON.stringify(all),before,'project presentation must preserve stored IDs, channels and complete rules');
 });
 

@@ -21,12 +21,12 @@ export function groupSchools(programs) {
   for (const school of schools.values()) {
     school.programs.sort((a,b)=>channelOrder(a.channel)-channelOrder(b.channel));
     const offerings = new Map();
-    const names=buildProgramNames(school.programs);
+    const names=buildProgramNames(school.programs),titles=buildProgramTitles(school.programs,{contextual:false});
     for (const p of school.programs) {
       const key = JSON.stringify([p.code, p.name, p.channel]);
       if (!offerings.has(key)) {
         const name=names.get(p.id),code=programCode(p);
-        offerings.set(key,{code:name===code||name.startsWith(code+'（')?'':code,name,programs:[]});
+        offerings.set(key,{code,name,title:titles.get(p.id),programs:[]});
       }
       offerings.get(key).programs.push(p);
     }
