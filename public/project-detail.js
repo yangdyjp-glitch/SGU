@@ -18,6 +18,7 @@ export function renderProjectDetail(p, ui) {
   const labels=ui.programLabel?null:buildProgramLabels([p]);
   const displayLabel=ui.programLabel||(program=>labels.get(program.id)||programTitle(program));
   const title=ui.programTitle?.(p)||buildProgramTitles(ui.allPrograms||[p]).get(p.id)||programTitle(p);
+  ui={...ui,programLabel:displayLabel};
   const view = buildProjectView(p);
   const sourceLinks = (p.sourceIds || []).map(id => `<a class="btn ghost sm" href="${documentUrl(id)}" target="_blank" rel="noopener">${p.sourceIds.length === 1 ? '完整原文' : esc(ui.documents?.find(d => d.id === id)?.name || id)} ${icon('eye')}</a>`).join('');
   const refs = sources => {

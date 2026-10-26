@@ -103,6 +103,13 @@ export function programTitle(p, name = programShortName(p)) {
   return code || name || clean(p.id) || '项目名称未注明';
 }
 
+// Requirement tables already sit under the project overview. Use just the
+// subject of an umbrella program, but keep standalone acronyms such as CSCE.
+export function programRequirementName(p, name = programShortName(p)) {
+  const title=programTitle(p,name),code=programCode(p),prefix=code+' · ';
+  return code&&title.startsWith(prefix)?title.slice(prefix.length):title;
+}
+
 function distinguishLabels(programs, labels, suffix, scope = () => '') {
   for (const group of groupsBy(programs, p => JSON.stringify([scope(p), labels.get(p.id)]))) {
     if (group.length < 2) continue;
@@ -127,8 +134,9 @@ export function buildProgramTitles(programs, { contextual = true } = {}) {
 }
 
 export function buildProgramLabels(programs) {
-  const names=buildProgramNames(programs), labels=new Map(programs.map(p=>[p.id,programTitle(p,names.get(p.id))]));
+  const names=buildProgramNames(programs), labels=new Map(programs.map(p=>[p.id,programRequirementName(p,names.get(p.id))]));
   distinguishLabels(programs, labels, p=>names.get(p.id));
+  distinguishLabels(programs, labels, programCode);
   distinguishLabels(programs, labels, programEntryLabel);
   distinguishLabels(programs, labels, p=>`${p.school} ${p.year}`);
   distinguishLabels(programs, labels, p=>clean(p.channel));
@@ -144,7 +152,6 @@ export function renderProgramScope(ids, programs, ui) {
   const links = selected.map(p => `<a href="#program/${esc(p.id)}" title="${esc(programOriginalTitle(p))}">${esc(label(p))}</a>`).join('');
   if (selected.length === programs.length && selected.length <= 8) return `<span class="scope-all">${selected.length === 1 ? esc(label(selected[0])) : `全部 ${selected.length} 项目`}</span>`;
   if (selected.length <= 2 && selected.every(p => label(p).length <= 24)) return `<span class="scope-programs">${links}</span>`;
-  const titles=ui.programTitle?null:buildProgramTitles(programs), title=ui.programTitle||(p=>titles.get(p.id));
-  const expandedLinks=selected.map(p=>`<a href="#program/${esc(p.id)}" title="${esc(programOriginalTitle(p))}"><strong>${esc(title(p))}</strong></a>`).join('');
+  const expandedLinks=selected.map(p=>`<a href="#program/${esc(p.id)}" title="${esc(programOriginalTitle(p))}"><strong>${esc(label(p))}</strong></a>`).join('');
   return `<details class="program-scope"><summary>${selected.length === programs.length ? '全部' : '适用'} ${selected.length} 个项目</summary><div class="scope-programs">${expandedLinks}</div></details>`;
 }

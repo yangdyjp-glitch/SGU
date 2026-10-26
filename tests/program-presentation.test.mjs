@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { seedPrograms } from '../lib/seed.mjs';
-import { programCode, programOriginalTitle, programShortName, programFullName, programTitle, programEntryLabel, buildProgramNames, buildProgramTitles, buildProgramLabels, renderProgramScope, renderProgramOverviewName } from '../public/program-presentation.js';
+import { programCode, programOriginalTitle, programShortName, programFullName, programTitle, programRequirementName, programEntryLabel, buildProgramNames, buildProgramTitles, buildProgramLabels, renderProgramScope, renderProgramOverviewName } from '../public/program-presentation.js';
 import {programAbbreviation} from '../public/program-abbreviations.js';
 import { createSchoolOverview } from '../public/school-detail.js';
 import { renderProjectDetail } from '../public/project-detail.js';
@@ -60,13 +60,20 @@ test('umbrella acronyms retain distinct subjects even in a single-project result
   assert.deepEqual([...buildProgramTitles(programs).values()],expected);
   assert.deepEqual(programs.map(p=>buildProgramTitles([p]).get(p.id)),expected);
   assert.deepEqual(programs.map(p=>programTitle(p)),expected);
+  const subjects=['综合政策','环境信息','物理','化学'];
+  assert.deepEqual([...buildProgramLabels(programs).values()],subjects);
+  assert.deepEqual(programs.map(p=>programRequirementName(p)),subjects);
+  const scope=renderProgramScope(programs.slice(0,3).map(p=>p.id),programs,ui);
+  assert.match(scope,/<details class="program-scope">/);
+  for(const subject of subjects.slice(0,3))assert.ok(scope.includes(`<strong>${subject}</strong>`));
+  assert.doesNotMatch(scope,/<strong>(?:GIGA|IUPS) ·/);
 });
 
 test('same-code education subjects get concise, distinct names everywhere without editing source records',()=>{
   const programs=[make('primary','教育学院・初等教育学科'),make('psychology','教育学院・心理与教育学科')],original=JSON.stringify(programs);
   const expected=['FEDPE · 初等教育','FEDPE · 心理教育'];
   assert.deepEqual([...buildProgramTitles(programs).values()],expected);
-  assert.deepEqual([...buildProgramLabels(programs).values()],expected);
+  assert.deepEqual([...buildProgramLabels(programs).values()],['初等教育','心理教育']);
   const view=createSchoolOverview('创价大学',programs,{...ui,deferSections:true});
   for(let i=0;i<programs.length;i++) {
     const p=programs[i];
@@ -75,11 +82,12 @@ test('same-code education subjects get concise, distinct names everywhere withou
     assert.ok(view.html.includes(`data-compare="${p.id}"`));
     const detail=renderProjectDetail(p,{...ui,allPrograms:programs});
     assert.ok(detail.includes(`<h1>${expected[i]}</h1>`));
+    assert.ok(detail.includes(`title="${esc(programOriginalTitle(p))}">${['初等教育','心理教育'][i]}</a>`));
     assert.ok(detail.includes(`<dd>${p.name}</dd>`));
     assert.ok(detail.includes(`<dd>${p.channel}</dd>`));
   }
   const scope=renderProgramScope([programs[0].id],programs,ui);
-  assert.match(scope,/>FEDPE · 初等教育<\/a>/);
+  assert.match(scope,/>初等教育<\/a>/);
   assert.equal(JSON.stringify(programs),original);
 });
 
@@ -138,6 +146,8 @@ test('faculty, entry, language and selection distinctions survive display-name c
   assert.equal(new Set(buildProgramLabels(sameLanguage).values()).size,2);
   const differentYears=[programs[0],{...programs[0],id:'next-year',year:2028}];
   assert.equal(new Set(buildProgramLabels(differentYears).values()).size,2);
+  const sharedSubject=[{...make('spsf','教育学部教育学科—SPSF'),code:'SPSF'},{...make('fedpe','教育学部教育学科'),code:'FEDPE'}];
+  assert.deepEqual([...buildProgramLabels(sharedSubject).values()],['教育 · SPSF','教育 · FEDPE'],'different umbrella programs must remain distinct when the subject is identical');
 });
 
 test('Chinese display names use four or fewer characters without truncating the full name',()=>{

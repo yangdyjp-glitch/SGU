@@ -1,5 +1,5 @@
 import { detailInfoAttribute } from './detail-hints.js';
-import { buildProgramTitles, renderProgramScope } from './program-presentation.js';
+import { buildProgramLabels, renderProgramScope } from './program-presentation.js';
 import { importedRuleText } from './imported-requirement-model.js';
 
 // These are filing categories, not declarations that documents are equivalent.
@@ -62,8 +62,8 @@ export function groupMaterials(programs, entries = p => p.materials || []) {
 }
 
 export function buildMaterialInfo(group, programs, ui) {
-  const titles = ui.programTitle ? null : buildProgramTitles(programs);
-  const title = ui.programTitle || (p=>titles.get(p.id));
+  const labels = ui.programLabel ? null : buildProgramLabels(programs);
+  const title = ui.programLabel || (p=>labels.get(p.id));
   const selected = programs.filter(p=>group.programs.includes(p.id));
   const partsFor = row => {
     const parts = row.parts?.length ? [...row.parts] : [{title:'适用阶段',text:row.stage||'原文未注明'},{title:row.note?'提交说明':'原文',text:row.note||row.source?.quote||'请核对原文',raw:!row.note&&Boolean(row.source?.quote)}];
