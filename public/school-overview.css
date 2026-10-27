@@ -74,14 +74,14 @@
 .qualification-scroll-tools input:disabled{cursor:default;opacity:.4}
 .qualification-scroll{overflow:auto;max-height:min(70vh,850px);overscroll-behavior:contain;scrollbar-color:var(--pine) var(--mint);scrollbar-width:auto;isolation:isolate}
 .qualification-matrix{border-collapse:separate;border-spacing:0}
-.qualification-scroll .qualification-matrix thead th{position:sticky;top:0;z-index:3;background:#f6f9f8;box-shadow:0 1px 0 var(--line)}
+.qualification-scroll .qualification-matrix thead th{position:sticky;top:0;z-index:3;background:var(--mint);color:var(--pine);box-shadow:0 1px 0 var(--pine);font-weight:700}
+.qualification-scroll .qualification-matrix thead th:not(:last-child){font-size:14px}
 .qualification-scroll .qualification-matrix tr>th:first-child{position:sticky;left:0;z-index:2;box-shadow:1px 0 0 var(--line),4px 0 6px #173e3207;overflow-wrap:anywhere}
 .qualification-scroll .qualification-matrix thead th:first-child{z-index:4}
 .qualification-scroll .qualification-group-heading th,.qualification-scroll .qualification-group-heading td{background:var(--mint);color:var(--pine)}
 .qualification-scroll .qualification-group-heading td{padding:0}
-.qualification-scroll .qualification-matrix th[scope=row]{vertical-align:middle}
-.qualification-scroll .qualification-matrix tr:hover>th:first-child{background:#f5f9f8}
-[data-entry-group=transfer] .qualification-scroll .qualification-matrix thead th,[data-entry-group=transfer] .qualification-scroll .qualification-matrix tr:hover>th:first-child{background:#f2f6fb}
+.qualification-scroll .qualification-matrix th[scope=row]{vertical-align:middle;background:var(--mint);color:var(--pine);font-weight:700}
+.qualification-scroll .qualification-matrix tr:hover>th:first-child{background:var(--mint)}
 .qualification-scroll .qualification-matrix .qualification-conditions{min-width:400px}
 /* Material categories replace repeated checklist rows; precise variants remain accessible. */
 .material-catalog{table-layout:fixed;min-width:500px}
