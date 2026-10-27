@@ -14,7 +14,10 @@ export function detailInfoAttribute(getInfo, ui) {
 // Ordinary hints retain their text layout; qualification hints show each
 // underlying type and its evidence without turning an unknown into a rejection.
 export function renderDetailInfoContent(info, esc, evidence = () => '') {
-  const refs = sources => [...new Map((sources || []).filter(Boolean).map(source => [JSON.stringify(source), source])).values()].map(evidence).join(' ');
+  const refs = sources => [...new Map((sources || []).filter(Boolean).map(source => [JSON.stringify(source), source])).values()].map(source=>{
+    if(source.url){try{const url=new URL(source.url);if(url.protocol==='https:')return `<a href="${esc(url.href)}" target="_blank" rel="noopener">官方依据</a>`;}catch{}}
+    return evidence(source);
+  }).join(' ');
   const paragraph = text => renderReadableText(text, esc, {limit:220});
   const heading = text => esc(conciseText(text));
   const distinctParts = parts => [...new Map((parts || []).filter(part=>part.text).map(part=>[JSON.stringify([part.title,conciseText(part.text)]),part])).values()];
@@ -34,7 +37,7 @@ export function renderDetailInfoContent(info, esc, evidence = () => '') {
       return `<tr><th scope="row">${esc(row.label)}</th><td><span class="qualification-decision-status ${state}">${states[state]}</span></td><td><p>${paragraph(row.text)}</p>${refs(row.sources)}${notes ? `<details class="qualification-explanation"><summary>补充依据</summary>${notes}</details>` : ''}</td></tr>`;
     }).join('')}</tbody></table></section>`;
     if (part.collapsed) return `<details class="qualification-explanation"><summary>${esc(part.title || '补充说明')}</summary><p>${paragraph(part.text)}</p></details>`;
-    return `<div class="hint-part">${part.title ? `<b>${heading(part.title)}</b>` : ''}<p>${paragraph(part.text)}</p></div>`;
+    return `<div class="hint-part">${part.title ? `<b>${heading(part.title)}</b>` : ''}<p>${paragraph(part.text)}</p>${part.sources?.length?`<div class="hint-sources">${refs(part.sources)}</div>`:''}</div>`;
   }).join('');
   return `<strong>${esc(info.label)}</strong>${parts}`;
 }

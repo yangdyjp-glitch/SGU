@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {academicScoreRows,groupAcademicScores,buildAcademicScoreTable,renderAcademicScores} from '../public/academic-scores.js';
+import {academicScoreRows,groupAcademicScores,buildAcademicScoreTable,academicScoreDisplay,renderAcademicScores} from '../public/academic-scores.js';
+import {renderDetailInfoContent} from '../public/detail-hints.js';
 import {academicScoreTypes,buildAcademicScoreCatalog} from '../public/academic-score-catalog.js';
 import {createSchoolOverview} from '../public/school-detail.js';
 import {renderProjectDetail} from '../public/project-detail.js';
@@ -20,7 +21,7 @@ const project=(id,rows=[row()])=>({id,school:'测试学校',year:2027,name:id,re
 test('academic scores preserve denominators, examination years and scholarship thresholds separately',()=>{
  const p=project('A',[row(),row({id:'ib-reference',admissionStatus:'reference',admissionText:'36／42，另 EE＋TOK ≥2',scholarshipStatus:'unspecified',scholarshipText:'未列门槛'}),row({id:'dse-old',qualification:'HKDSE',variant:'2023 年及以前',admissionText:'最佳5科 ≥18',scholarshipText:'最佳5科 ≥22'}),row({id:'dse-new',qualification:'HKDSE',variant:'2024 年起',admissionText:'最佳4科 ≥14',scholarshipText:'最佳4科 ≥17'})]);
  assert.equal(academicScoreRows(p).length,4);const html=renderAcademicScores([p],ui);
- for(const s of ['≥28／45','≥35／45','36／42','EE＋TOK ≥2','2023 年及以前','2024 年起','参考成绩','申请最低成绩','奖学金成绩'])assert.ok(html.includes(s),s);
+ for(const s of ['≥28／45','≥35／45','36／42','EE＋TOK ≥2','2023 年及以前','2024 年起','参考成绩','最低分','奖学金分'])assert.ok(html.includes(s),s);
  assert.equal(groupAcademicScores([p]).length,4);
 });
 test('school grouping requires matching conditions, scholarships and qualification system, not just a shared numeric score',()=>{
@@ -28,11 +29,17 @@ test('school grouping requires matching conditions, scholarships and qualificati
  const grouped=groupAcademicScores([a,b,c,d,e]);assert.equal(grouped.length,4);assert.deepEqual(grouped[0].programs,['A','B']);
  assert.equal(grouped.find(r=>r.qualification==='Singapore A-Level').programs[0],'E');
 });
-test('legacy and unpublished scores never appear as zero, guaranteed acceptance, or an inferred no-minimum',()=>{
+test('absent numeric thresholds display concise copy while stored statuses remain unknown',()=>{
  const old={id:'old',name:'旧项目',academicTests:{status:'optional'}};
- assert.deepEqual(validateAcademicScores(old),[]);assert.match(renderAcademicScores([old],ui),/尚未专项整理/);
- const html=renderAcademicScores([project('A',[row({admissionStatus:'unspecified',admissionText:'',scholarshipStatus:'unspecified',scholarshipText:''})])],ui);
- assert.match(html,/资料未列最低分/);assert.doesNotMatch(html,/明确不设最低分/);assert.match(html,/不等于零分/);
+ assert.deepEqual(validateAcademicScores(old),[]);assert.match(renderAcademicScores([old],ui),/无要求/);
+ const p=project('A',[row({admissionStatus:'unspecified',admissionText:'未列总分／等级下限',scholarshipStatus:'unspecified',scholarshipText:'已核对资料未列本课程的奖学金分数线'})]),before=JSON.stringify(p),info=[];
+ const html=renderAcademicScores([p],{...ui,registerInfo:fn=>(info.push(fn),String(info.length))});
+ assert.match(html,/无要求/);assert.doesNotMatch(html,/未列总分|已核对资料未列|资料未列最低分/);
+ assert.ok(info[0]().parts.some(p=>p.text.includes('未列总分')));assert.equal(JSON.stringify(p),before);
+ for(const admissionStatus of ['unspecified','no-minimum','reference'])assert.equal(academicScoreDisplay(row({admissionStatus}),'admission'),'无要求');
+ assert.equal(academicScoreDisplay(row({scholarshipStatus:'holistic'}),'scholarship'),'无要求');
+ assert.equal(academicScoreDisplay(row({admissionStatus:'not-accepted'}),'admission'),'不适用');
+ assert.equal(academicScoreDisplay(row({admissionStatus:'conditional',admissionText:'以录取通知为准'}),'admission'),'以录取通知为准');
 });
 test('score validation rejects malformed, duplicate and unsupported entries without crashing',()=>{
  assert.deepEqual(validateAcademicScores(project('A')),[]);
@@ -44,9 +51,10 @@ test('evidence is escaped; unsafe external links do not render and large hints c
  const info=[],p=project('A',[row({qualification:'IB <script>alert(1)</script>',source:{...source,url:'javascript:alert(1)'},conditions:'<img onerror="bad">'})]);
  const html=renderAcademicScores([p],{...ui,registerInfo:fn=>(info.push(fn),String(info.length))});
  assert.doesNotMatch(html,/<script|<img|href="javascript:/);assert.match(html,/&lt;script&gt;/);assert.match(html,/data-info-key=/);assert.doesNotMatch(html,/data-info=/);assert.equal(info.length,1);assert.ok(info[0]().parts.some(p=>p.text===source.quote));
- const external=renderAcademicScores([project('B',[row({source:{url:'https://university.example/requirements',page:null,quote:'Requirements'}})])],ui);assert.match(external,/href="https:\/\/university.example\/requirements"/);
+ const details=renderDetailInfoContent(info[0](),esc,ui.evidence);assert.doesNotMatch(details,/<script|<img|href="javascript:/);assert.match(details,/test-guide/);
+ const externalInfo=[];renderAcademicScores([project('B',[row({source:{url:'https://university.example/requirements',page:null,quote:'Requirements'}})])],{...ui,registerInfo:fn=>(externalInfo.push(fn),'source')});assert.match(renderDetailInfoContent(externalInfo[0](),esc,ui.evidence),/href="https:\/\/university.example\/requirements"/);
 });
-test('new extraction and existing review refresh retain two score columns, per-row doubts and legacy compatibility',()=>{
+test('new extraction and existing review refresh retain both score rows, per-row doubts and legacy compatibility',()=>{
  const data=admissionsFixture(),doc={id:'test-guide',filename:'guide.pdf',text:admissionsText+'\nFull diploma: 28; scholarship: 35.'};
  data.programs[0].academicTests.scoreDetails=[{...row(),source:{page:'2',quote:source.quote}}];
  assert.deepEqual(validateSchema(data),[]);
@@ -75,8 +83,21 @@ test('every project gets the same ordered score terms without borrowing another 
  for(const table of tables.slice(1)){assert.equal(ap(table)[0].placeholder,true);assert.deepEqual(ap(table)[0].sources,[]);assert.equal(ap(table)[0].admissionStatus,'unspecified');assert.equal(ap(table)[0].admissionText,undefined);}
  assert.equal(ap(tables[1])[0].unreviewed,false);assert.equal(ap(tables[2])[0].unreviewed,true);
  const html=renderAcademicScores([b],{...ui,allPrograms:programs});
- assert.match(html,/data-academic-score="AP" class="academic-score-unlisted"/);assert.match(html,/未列明/);assert.doesNotMatch(html,/3 科各|test-guide|不作为本项考试/);
+ assert.match(html,/data-academic-score="AP" class="academic-score-unlisted"/);assert.match(html,/无要求/);assert.doesNotMatch(html,/3 科各|test-guide|不作为本项考试/);
  assert.equal(JSON.stringify(programs),before);
+});
+
+test('score matrix uses the qualification table project order and keeps each project’s own evidence',()=>{
+ const a=project('A'),b=project('B',[row({source:{...source,sourceId:'second-guide'}})]),c=project('C',[]),info=[];
+ const html=renderAcademicScores([b,c,a],{...ui,programLabel:p=>'项目 '+p.id,registerInfo:fn=>(info.push(fn),String(info.length))});
+ assert.deepEqual([...html.matchAll(/data-academic-score-program="([^"]+)"/g)].map(m=>m[1]),['B','C','A']);
+ const ib=html.match(/<tbody data-academic-score-type="ib">(.*?)<\/tbody>/s)[1];
+ assert.deepEqual([...ib.matchAll(/data-score-kind="([^"]+)"/g)].map(m=>m[1]),['admission','scholarship']);
+ for(const rowHtml of ib.split('<tr ').slice(1))assert.deepEqual([...rowHtml.matchAll(/data-score-program="([^"]+)"/g)].map(m=>m[1]),['B','C','A']);
+ assert.equal(info.length,2);
+ assert.deepEqual(info.map(get=>[get().label,get().parts.flatMap(part=>part.sources||[]).map(s=>s.sourceId)]),[['项目 B · IB Diploma',['second-guide']],['项目 A · IB Diploma',['test-guide']]]);
+ assert.equal((ib.match(/class="academic-score-kind">最低分/g)||[]).length,1);
+ assert.equal((ib.match(/class="academic-score-kind">奖学金分/g)||[]).length,1);
 });
 
 test('a shared school table keeps missing score terms attached to only the projects missing them',()=>{
