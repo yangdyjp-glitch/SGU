@@ -68,7 +68,7 @@ test('school score aggregation preserves all 28 live thresholds with exact progr
   const html = renderSchoolDetail(programs[0].school, programs, ui);
   assert.ok(html.includes('<th>适用项目</th><th>备注</th>'));
   for (const row of view.scores) {
-    const rendered = html.match(new RegExp(`<tr data-school-score="${row.id}">([\\s\\S]*?)</tr>`))?.[1];
+    const rendered = html.match(new RegExp(`<tr data-school-score="${row.id}"[^>]*>([\\s\\S]*?)</tr>`))?.[1];
     assert.ok(rendered, row.id);
     const cells = [...rendered.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map(match => match[1]);
     assert.equal(cells.length, 8);
