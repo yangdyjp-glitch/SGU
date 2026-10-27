@@ -52,7 +52,6 @@
 .project-drawer-body .hierarchy-breadcrumb{display:none}.project-drawer-body .detail-section{scroll-margin-top:16px}
 .project-drawer .program-title{align-items:flex-start;gap:12px;flex-wrap:wrap}.project-drawer .program-title>div{min-width:0}.project-drawer .program-title h1{font-size:22px;line-height:1.5;overflow-wrap:anywhere}
 .project-drawer .program-title .tag{max-width:100%;white-space:normal;overflow-wrap:anywhere}.project-drawer .project-actions{flex-wrap:wrap}.project-drawer .source-actions .btn{white-space:normal;max-width:100%;overflow-wrap:anywhere}
-.project-drawer .qualification-matrix{--qualification-min-width:680px!important}
 .compare-grid th{white-space:normal;min-width:200px;max-width:320px;overflow-wrap:anywhere}.compare-project-context{display:block;font-weight:400;line-height:1.5;margin-top:7px}
 /* The selected entry group scopes every section, including independent details. */
 [data-entry-group=transfer]{--pine:#285f92;--pine-deep:#204d77;--mint:#e6eff8;--line:#d8e3ed;--ink:#263e53;--muted:#64798c}
@@ -72,7 +71,14 @@
 .qualification-scroll-tools label{display:flex;align-items:center;gap:8px;white-space:nowrap}
 .qualification-scroll-tools input{width:160px;max-width:30vw;accent-color:var(--pine);cursor:ew-resize}
 .qualification-scroll-tools input:disabled{cursor:default;opacity:.4}
-.qualification-scroll{overflow:auto;max-height:min(70vh,850px);overscroll-behavior:contain;scrollbar-color:var(--pine) var(--mint);scrollbar-width:auto;isolation:isolate}
+.qualification-scroll{overflow:auto;max-height:min(70vh,850px);overscroll-behavior:contain;scrollbar-color:var(--pine) var(--mint);scrollbar-width:auto;scrollbar-gutter:stable;container-type:inline-size;isolation:isolate}
+/* Both matrices use the same field and project columns, regardless of their trailing content. */
+.qualification-scroll :is(.qualification-matrix,.academic-score-table){--matrix-name-width:280px;--matrix-project-max-width:150px;--matrix-project-width:min(var(--matrix-project-max-width),(100cqw - var(--matrix-name-width)) / min(10,var(--matrix-project-count)));--matrix-tail-width:0px;table-layout:fixed;min-width:0;width:max(100%,calc(var(--matrix-name-width) + var(--matrix-project-width) * var(--matrix-project-count) + var(--matrix-tail-width)))}
+.qualification-scroll table:has(thead :is([data-qualification-program],[data-academic-score-program]):nth-child(7)){--matrix-project-max-width:88px}
+.qualification-scroll .qualification-matrix{--matrix-tail-width:400px}
+.qualification-name-column,.academic-score-name-column{width:var(--matrix-name-width)}
+.qualification-program-column,.academic-score-project-column{width:var(--matrix-project-width)}
+.qualification-scroll .qualification-matrix .acceptance-column{width:auto;min-width:0}
 .qualification-matrix{border-collapse:separate;border-spacing:0}
 .qualification-scroll .qualification-matrix thead th{position:sticky;top:0;z-index:3;background:var(--mint);color:var(--pine);box-shadow:0 1px 0 var(--pine);font-weight:700}
 .qualification-scroll .qualification-matrix thead th:not(:last-child){font-size:14px}
@@ -98,7 +104,7 @@
 .material-variant-scope{font-size:12px;color:var(--pine);padding:6px 8px;background:var(--mint);border-radius:4px}
 .material-variant-sources .evidence-btn{display:inline-flex}.material-variant-sources{margin-top:8px}
 .material-variant[hidden]{display:none!important}
-@media(max-width:620px){.school-entry-bar{gap:6px}.entry-switch button{padding:6px 9px;min-height:38px;font-size:12px}.school-section-links{margin-inline:-4px}.qualification-name-column{width:190px}.qualification-scroll .qualification-matrix tbody th[scope=row]{font-size:13px}.qualification-scroll-tools{padding:6px 10px;flex-wrap:wrap;gap:3px}.qualification-scroll-tools input{max-width:45vw}.qualification-scroll{max-height:65vh}.material-catalog{min-width:440px}.material-catalog th,.material-catalog td{padding:6px 10px}.material-catalog .material-group-button{font-size:13px}.material-category-column{width:42%}.material-project-filter select{font-size:12px}}
+@media(max-width:620px){.school-entry-bar{gap:6px}.entry-switch button{padding:6px 9px;min-height:38px;font-size:12px}.school-section-links{margin-inline:-4px}.qualification-scroll :is(.qualification-matrix,.academic-score-table){--matrix-name-width:190px;--matrix-project-width:120px}.qualification-scroll .qualification-matrix tbody th[scope=row]{font-size:13px}.qualification-scroll-tools{padding:6px 10px;flex-wrap:wrap;gap:3px}.qualification-scroll-tools input{max-width:45vw}.qualification-scroll{max-height:65vh}.material-catalog{min-width:440px}.material-catalog th,.material-catalog td{padding:6px 10px}.material-catalog .material-group-button{font-size:13px}.material-category-column{width:42%}.material-project-filter select{font-size:12px}}
 @media(max-width:900px){.project-drawer{width:calc(100vw - 24px)}.school-overview-nav{border-radius:6px}}
 @media(max-width:620px){.school-overview-nav{margin-inline:-4px}.school-detail>.detail-section,.school-projects{scroll-margin-top:180px}.school-projects .search{width:100%}.school-project-scroll.many-projects{max-height:370px}.school-projects .toolbar{gap:7px}.school-controls{gap:7px}.school-section-placeholder{min-height:220px}.qualification-overview-name{width:220px}.project-drawer{width:100vw}.project-drawer-head{padding:12px}.project-drawer-head h2{font-size:16px}.project-drawer-body{padding:12px 8px}.project-drawer .program-title{padding:14px}.project-drawer .program-title h1{font-size:20px}}
 @media(max-width:620px){.qualification-overview{display:block;min-width:0}.qualification-overview>colgroup,.qualification-overview>thead{display:none}.qualification-overview>tbody,.qualification-overview>tbody>tr,.qualification-overview>tbody>tr>th,.qualification-overview>tbody>tr>td{display:block;width:100%}.qualification-overview>tbody>tr>th{border-bottom:0;padding-bottom:3px}.qualification-overview>tbody>tr>td{border-top:0;padding-top:4px}.qualification-variants>summary{flex-wrap:wrap}.qualification-overview>tbody>.qualification-group-heading>th{padding:8px 12px}.qualification-overview .table-wrap{max-width:100%;min-width:0}}

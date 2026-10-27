@@ -9,9 +9,6 @@
 .qualification-hint>span{font-family:inherit;font-size:11px;color:#91621f;border-color:#ba964e}
 .qualification-status.partial{background:#fff1ca;color:#805619;min-width:30px}
 .qualification-scope-note{background:#fff6df;color:#805619;padding:1px 5px;border-radius:3px;box-decoration-break:clone;-webkit-box-decoration-break:clone;margin-right:6px;line-height:inherit}
-.qualification-matrix .acceptance-column{width:56px;min-width:56px}
-.qualification-matrix,.project-detail .qualification-matrix{table-layout:fixed;min-width:var(--qualification-min-width,880px)}
-.qualification-name-column{width:300px}.qualification-program-column{width:56px}
 .qualification-matrix .qualification-conditions{vertical-align:middle}
 .qualification-conditions-line{display:flex;align-items:center;gap:4px;min-width:0}
 .qualification-conditions-text{display:block;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
