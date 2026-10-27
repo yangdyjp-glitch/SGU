@@ -34,8 +34,8 @@
 .language-score-table th:nth-child(n+3):nth-child(-n+6),.language-score-table td:nth-child(n+3):nth-child(-n+6){width:1%;min-width:54px;text-align:center;font-variant-numeric:tabular-nums}
 .language-score-table .score-basis{font-size:12px;font-weight:400;color:var(--muted)}.language-score-table td.score-notes{min-width:180px;color:var(--muted)}.language-score-table .score-scope .scope-programs{flex-wrap:nowrap;gap:5px}.language-score-table .score-scope small{display:none}
 .language-score-table .evidence-btn{padding:0 3px;line-height:1.5}.school-score-table{min-width:980px}
-.school-score-table tr[data-score-band="0"]{background:color-mix(in srgb,var(--mint) 60%,white)}
-.school-score-table tr[data-score-band="1"]{background:color-mix(in srgb,var(--mint) 15%,white)}
+.language-score-table tr[data-score-band="0"]:not(.admission-doubt){background:color-mix(in srgb,var(--mint) 60%,white)}
+.language-score-table tr[data-score-band="1"]:not(.admission-doubt){background:color-mix(in srgb,var(--mint) 15%,white)}
 .school-score-table .program-scope{margin:0;line-height:18px}
 .school-score-table .program-scope>summary{padding:0;line-height:18px}
 .school-score-table .score-scope>.scope-programs,.school-score-table .score-scope>.scope-all{display:flex;align-items:center;line-height:18px;min-height:18px}

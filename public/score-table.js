@@ -28,12 +28,12 @@ export function renderLanguageScoreTable(rows, ui, applies) {
   let previousScope,band=1;
   const body = rows.map((row,index) => {
     // Alternate by consecutive project scopes, keeping a project's exam block together.
-    const scope=JSON.stringify([...new Set(row.programs||[])].sort());
+    const scope=applies?JSON.stringify([...new Set(row.programs||[])].sort()):'';
     if(scope!==previousScope){previousScope=scope;band=1-band;}
     const notes = scoreNotes(row);
     const basis=row.basis?.length>16?(typeof row.score==='number'?'计分方式见备注':''):row.basis || '计分方式未注明';
     const sources = [...new Map((row.sources || [row.source]).filter(Boolean).map(source => [JSON.stringify(source), source])).values()];
-    return `<tr ${applies ? 'data-school-score' : 'data-score'}="${esc(row.id)}"${applies?` data-score-band="${band}"`:''}${ui.scoreRowClass?.(row,index)?` class="${esc(ui.scoreRowClass(row,index))}"`:''}><td class="score-exam"><strong>${esc(row.exam)}</strong></td><td class="score-minimum"><strong>${esc(minimumScoreText(row))}</strong>${basis?`<span class="score-basis">（${esc(basis)}）</span>`:''}</td>${['reading', 'listening', 'writing', 'speaking'].map(key => `<td>${esc(subscore(row[key]))}</td>`).join('')}${applies ? `<td class="score-scope">${applies(row.programs)}</td>` : ''}<td class="score-notes"><span class="score-note-content"><span title="${esc(notes.full)}">${esc(notes.text || '—')}</span>${notes.full.length>50?renderInfoHint(row.exam+' · 完整考试',[{text:notes.full}],esc):''}${sources.map(evidence).join(' ')}</span></td></tr>`;
+    return `<tr ${applies ? 'data-school-score' : 'data-score'}="${esc(row.id)}" data-score-band="${band}"${ui.scoreRowClass?.(row,index)?` class="${esc(ui.scoreRowClass(row,index))}"`:''}><td class="score-exam"><strong>${esc(row.exam)}</strong></td><td class="score-minimum"><strong>${esc(minimumScoreText(row))}</strong>${basis?`<span class="score-basis">（${esc(basis)}）</span>`:''}</td>${['reading', 'listening', 'writing', 'speaking'].map(key => `<td>${esc(subscore(row[key]))}</td>`).join('')}${applies ? `<td class="score-scope">${applies(row.programs)}</td>` : ''}<td class="score-notes"><span class="score-note-content"><span title="${esc(notes.full)}">${esc(notes.text || '—')}</span>${notes.full.length>50?renderInfoHint(row.exam+' · 完整考试',[{text:notes.full}],esc):''}${sources.map(evidence).join(' ')}</span></td></tr>`;
   }).join('');
   return `<div class="table-wrap"><table class="score-table language-score-table${applies ? ' school-score-table' : ''}"><colgroup><col class="score-exam-col"><col class="score-minimum-col"><col span="4" class="score-skill-col">${applies?'<col class="score-scope-col">':''}<col></colgroup><thead><tr><th>考试</th><th>最低分</th><th>阅读</th><th>听力</th><th>写作</th><th>口语</th>${applies ? '<th>适用项目</th>' : ''}<th>备注</th></tr></thead><tbody>${body}</tbody></table></div>`;
 }

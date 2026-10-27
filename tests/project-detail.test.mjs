@@ -36,7 +36,7 @@ test('all 28 language rows render their live threshold, version, basis, individu
     const html = render(p);
     assert.ok(html.includes('<th>备注</th>'));
     for (const row of p.language) {
-      const rendered = html.match(new RegExp(`<tr data-score="${row.id}">([\\s\\S]*?)</tr>`))?.[1];
+      const rendered = html.match(new RegExp(`<tr data-score="${row.id}"[^>]*>([\\s\\S]*?)</tr>`))?.[1];
       assert.ok(rendered, row.id);
       assert.ok(rendered.includes(esc(row.exam)));
       assert.ok(rendered.includes(`≥ ${row.score}`));
