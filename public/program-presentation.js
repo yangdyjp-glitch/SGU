@@ -12,18 +12,21 @@ export function programEntryLabel(program) {
   const raw = clean(program.channel);
   if (!raw) return '申请类型未注明';
   if (/奖学金|scholarship/i.test(raw)) return [/MEXT/i.test(raw) ? 'MEXT奖学金' : '奖学金', /附录|仅含/.test(raw) ? '附录' : ''].filter(Boolean).join(' · ');
+  // These are display labels for the General / Visa-based categories. Keep
+  // their original rules, and do not infer a visa category from General Selection.
+  const visaMode = /visa.based|留学签证/i.test(raw) ? '留学签证' : /一般签证|^General(?:\s*[（(]一般类[）)])?$/i.test(raw) ? '一般签证' : '';
   let entry = '申请';
   if (/编入|转入|transfer/i.test(raw)) {
     const second = /(?:二|2)(?:年级|年)|(?:second|2nd)[ -]?year/i.test(raw), third = /(?:三|3)(?:年级|年)|(?:third|3rd)[ -]?year/i.test(raw);
     const both = second && third || /(?:二|2)[、和及／/・](?:三|3)|second.*third/i.test(raw);
     entry = (both ? '二、三年' : third ? '三年' : second ? '二年' : '') + '编入';
-  } else if (!/申请|入学|入试|招生|选拔|新生|一年|1年|通道|材料审查|留学生|自己推荐|admission|entry|examination|selection|first.year|freshman|general|visa.based|term\s*\w+|Winter AO/i.test(raw)) return raw;
+  } else if (!visaMode && !/申请|入学|入试|招生|选拔|新生|一年|1年|通道|材料审查|留学生|自己推荐|admission|entry|examination|selection|first.year|freshman|general|visa.based|term\s*\w+|Winter AO/i.test(raw)) return raw;
   // Type letters alone do not establish a language. Both bases must remain
   // visible when a single record accepts English and Japanese applications.
   const languages = [/英语(?=轨道|基准|授课|通道|本科|使用者|\s*(?:[）),，、／/]|$))|English(?:[ -](?:Track|Basis|Language|Speaker|Taught)|\s*[）),，]|$)/i.test(raw) ? '英' : '', /(?:日语|日本語)(?=轨道|基准|授课|通道|本科|\s*(?:[）),，、／/]|$))|Japanese(?:[ -](?:Track|Basis|Language|Speaker|Taught)|\s*[）),，]|$)/i.test(raw) ? '日' : ''].filter(Boolean).join('／');
   const type = languages ? '' : raw.match(/Type\s*[A-Z]\b/i)?.[0].replace(/Type\s*/i, 'Type ') || '';
-  const mode = /visa.based|留学签证/i.test(raw) ? '留学签证' : /自费|私费/.test(raw) ? '自费' : raw.match(/[A-Z]方式/i)?.[0] || (/两阶段/.test(raw) ? '两阶段' : /^General(?:（|\s|$)/i.test(raw) ? '一般' : '');
-  return [entry, languages, type, mode].filter(Boolean).join(' · ');
+  const mode = visaMode || (/自费|私费/.test(raw) ? '自费' : raw.match(/[A-Z]方式/i)?.[0] || (/两阶段/.test(raw) ? '两阶段' : /^General(?:（|\s|$)/i.test(raw) ? '一般' : ''));
+  return [entry === '申请' && visaMode ? '' : entry, languages, type, mode].filter(Boolean).join(' · ');
 }
 
 function programSubjectName(p) {
