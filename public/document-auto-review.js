@@ -5,6 +5,7 @@ import { buildProgramTitles, programTitle, programEntryLabel, programOriginalTit
 
 export function renderAutoReview(d,ui){
  const {esc,button}=ui,review=filterReviewDoubts(d.autoReview);
+ ui={...ui,allPrograms:[...(ui.allPrograms||[]),...(review?.entries||[]).map(entry=>entry.program)]};
  const copy=value=>renderReadableText(value,esc,{expandable:false});
  const titles=buildProgramTitles((review?.entries||[]).map(e=>e.program));
  const title=p=>titles.get(p.id)||programTitle(p);

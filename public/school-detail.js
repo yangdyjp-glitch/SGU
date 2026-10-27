@@ -96,7 +96,7 @@ export function createSchoolOverview(name, allPrograms, ui, filters = {}) {
   const infoStore = new Map();
   const registerInfo = getInfo => { const key='school-info-'+infoStore.size; infoStore.set(key,getInfo); return key; };
   const resolveInfo = key => { const value=infoStore.get(key); if(typeof value==='function'){const info=value();infoStore.set(key,info);return info;} return value; };
-  ui = { ...ui, programLabel:p=>labels.get(p.id)||programLabel(p), programTitle:p=>titles.get(p.id), ...(ui.deferSections?{registerInfo}:{}) };
+  ui = { ...ui, allPrograms, programLabel:p=>labels.get(p.id)||programLabel(p), programTitle:p=>titles.get(p.id), ...(ui.deferSections?{registerInfo}:{}) };
   const label = id => labels.get(id) || id;
   // Build the full requirement view only when a section is requested.
   let view;

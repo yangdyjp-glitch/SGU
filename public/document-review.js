@@ -43,6 +43,7 @@ export function renderDocumentStatus(d, ui) {
 
 export function renderDocumentReview(d, programs, ui) {
   const { esc, badge, button, field, select, tag, empty } = ui;
+  ui={...ui,allPrograms:programs};
   if(!d.projectDraft)return `<div class="document-review" data-document-id="${esc(d.id)}" data-content-status="${esc(documentStatusKey(d))}"><div class="document-steps"><span>1. 上传文件</span><strong>2. 核对高亮疑点</strong><span>3. 整体确认入库</span></div>${renderDocumentStatus(d,ui)}<div class="document-content">${renderAutoReview(d,ui)}${d.text?`<details><summary>查看完整提取原文</summary><pre class="document-extracted-text">${esc(d.text)}</pre></details>`:''}</div></div>`;
   const scope = d.reviewScope || d.analysis || {};
   const candidates = matchingDocumentPrograms(programs, scope.school, scope.year);

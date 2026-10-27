@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {academicScoreRows,groupAcademicScores,renderAcademicScores} from '../public/academic-scores.js';
+import {academicScoreRows,groupAcademicScores,buildAcademicScoreTable,renderAcademicScores} from '../public/academic-scores.js';
+import {academicScoreTypes,buildAcademicScoreCatalog} from '../public/academic-score-catalog.js';
+import {createSchoolOverview} from '../public/school-detail.js';
+import {renderProjectDetail} from '../public/project-detail.js';
 import {validateAcademicScores} from '../lib/academic-scores.mjs';
 import {schemaFields,validateSchema,documentSchema} from '../lib/document-schema.mjs';
 import {buildDocumentReview,refreshReviewValidation} from '../lib/document-organizer.mjs';
@@ -59,4 +62,54 @@ test('scholarship renewal GPA remains separate; extra score descriptions do not 
  const baseline=matchProgram(s,p,p.rounds[0]);p.academicTests={...p.academicTests,scoreDetails:[row({admissionStatus:'reference',admissionText:'40／42'})],scholarshipGrades:[{id:'renewal',name:'续领奖学金',stage:'入学后／续领',status:'minimum',text:'GPA ≥2.5',conditions:'入学后的年度审核',source}]};
  const current=matchProgram(s,p,p.rounds[0]);delete current.computedAt;delete baseline.computedAt;assert.deepEqual(current,baseline);
  const html=renderAcademicScores([p],ui);assert.match(html,/入学后／续领/);assert.match(html,/GPA ≥2.5/);assert.match(html,/其他奖学金成绩要求/);
+});
+
+test('every project gets the same ordered score terms without borrowing another project’s thresholds or evidence',()=>{
+ const a=project('A',[row({qualification:'AP',admissionText:'3 科各 ≥4',scholarshipText:'3 科各 ≥5'})]),b=project('B',[]),legacy={id:'legacy',academicTests:{status:'optional'}};
+ const programs=[a,b,legacy],before=JSON.stringify(programs),tables=programs.map(p=>buildAcademicScoreTable([p],programs));
+ assert.equal(academicScoreTypes.length,20);
+ for(const table of tables)assert.deepEqual(table.map(({type})=>type.id),academicScoreTypes.map(type=>type.id));
+ const ap=table=>table.find(section=>section.type.id==='ap').rows;
+ assert.equal(ap(tables[0])[0].admissionText,'3 科各 ≥4');
+ assert.equal(ap(tables[0])[0].scholarshipText,'3 科各 ≥5');
+ for(const table of tables.slice(1)){assert.equal(ap(table)[0].placeholder,true);assert.deepEqual(ap(table)[0].sources,[]);assert.equal(ap(table)[0].admissionStatus,'unspecified');assert.equal(ap(table)[0].admissionText,undefined);}
+ assert.equal(ap(tables[1])[0].unreviewed,false);assert.equal(ap(tables[2])[0].unreviewed,true);
+ const html=renderAcademicScores([b],{...ui,allPrograms:programs});
+ assert.match(html,/data-academic-score="AP" class="academic-score-unlisted"/);assert.match(html,/未列明/);assert.doesNotMatch(html,/3 科各|test-guide|不作为本项考试/);
+ assert.equal(JSON.stringify(programs),before);
+});
+
+test('a shared school table keeps missing score terms attached to only the projects missing them',()=>{
+ const a=project('A',[row({qualification:'AP'})]),b=project('B'),c=project('C',[]);
+ const table=buildAcademicScoreTable([a,b,c]);
+ const ap=table.find(section=>section.type.id==='ap').rows;
+ assert.equal(ap.length,2);assert.deepEqual(ap[0].programs,['A']);assert.deepEqual(ap[1].programs,['B','C']);
+ const ib=table.find(section=>section.type.id==='ib').rows;
+ assert.deepEqual(ib[0].programs,['B']);assert.deepEqual(ib[1].programs,['A','C']);
+ for(const section of table)assert.deepEqual(new Set(section.rows.flatMap(row=>row.programs)),new Set(['A','B','C']));
+});
+
+test('shared score aliases preserve AS, awarding bodies, years and distinct diploma systems',()=>{
+ const p=project('A',[
+  row({id:'full',qualification:'GCE A-Level',admissionText:'AAA'}),
+  row({id:'as',qualification:'UK GCE AS Level',admissionText:'仅按 AS 条件核对'}),
+  row({id:'sg',qualification:'Singapore GCE A-Level',admissionText:'H2 三科'}),
+  row({id:'ap',qualification:'Advanced Placement (AP)',admissionText:'各科 ≥4'}),
+  row({id:'ossd',qualification:'Ontario Secondary School Diploma',admissionText:'六科平均 80%'}),
+  row({id:'canada',qualification:'加拿大高中文凭',admissionText:'各省条件另核对'})
+ ]),before=JSON.stringify(p),table=buildAcademicScoreTable([p]);
+ const uk=table.find(section=>section.type.id==='gce-alevel').rows;
+ assert.equal(uk.length,2);assert.deepEqual(uk.map(r=>r.originalQualification),['GCE A-Level','UK GCE AS Level']);
+ assert.equal(table.find(section=>section.type.id==='singapore-alevel').rows[0].admissionText,'H2 三科');
+ const catalog=buildAcademicScoreCatalog([p]);assert.equal(catalog.length,20);
+ const html=renderAcademicScores([p],ui);for(const value of ['UK GCE AS Level','AAA','H2 三科','六科平均 80%','各省条件另核对'])assert.ok(html.includes(value));
+ assert.equal(JSON.stringify(p),before);
+});
+
+test('a newly recorded score type joins the global catalog in both school and standalone project views',()=>{
+ const seed=seedPrograms()[0],a={...structuredClone(seed),...project('A'),school:'学校甲'},b={...structuredClone(seed),...project('B',[row({qualification:'独立考试 Z'})]),school:'学校乙'};
+ const all=[a,b],types=buildAcademicScoreCatalog(all);assert.equal(types.length,21);assert.equal(types.at(-1).label,'独立考试 Z');
+ for(const p of all)assert.deepEqual(buildAcademicScoreTable([p],all).map(({type})=>type.id),types.map(type=>type.id));
+ const view=createSchoolOverview(a.school,all,{...ui,button:()=>'',deferSections:true});
+ for(const html of [view.renderSection('academic'),renderProjectDetail(a,{...ui,button:()=>'',allPrograms:all})])assert.match(html,/data-academic-score="独立考试 Z" class="academic-score-unlisted"/);
 });
