@@ -1,9 +1,11 @@
 .academic-score-section{border-top:1px solid var(--line,#d9e5e2);margin-top:12px}
 .academic-score-heading{padding:18px 20px 12px;display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}
 .academic-score-heading h3{font-size:17px;margin:0}.academic-score-heading p{font-size:12px;color:var(--muted,#6a817c);margin:0}
-.academic-score-table{--academic-name-width:300px;table-layout:fixed;min-width:calc(var(--academic-name-width) + var(--academic-projects-width));width:100%;font-size:14px;border-collapse:separate;border-spacing:0}
+.academic-score-scroll{container-type:inline-size}
+.academic-score-table{--academic-name-width:220px;table-layout:fixed;min-width:100%;width:max(100%,calc(var(--academic-name-width) + (100cqw - var(--academic-name-width)) / 10 * var(--academic-project-count)));font-size:14px;border-collapse:separate;border-spacing:0}
 .academic-score-name-column{width:var(--academic-name-width)}
 .academic-score-table td,.academic-score-table th,.academic-scholarship-table td,.academic-scholarship-table th{white-space:normal;overflow-wrap:anywhere;vertical-align:middle;line-height:1.55;padding:9px 12px}
+.academic-score-table td,.academic-score-table thead th{padding:7px 5px}
 .academic-score-table thead th{position:sticky;top:0;z-index:3;background:#f6f9f8;box-shadow:0 1px 0 var(--line);font-size:13px;font-weight:600;text-align:center}
 .academic-score-table thead th a{display:block}.academic-score-table tr>th:first-child{position:sticky;left:0;z-index:2;background:#f7faf9;text-align:left;box-shadow:1px 0 0 var(--line),4px 0 6px #173e3207}
 .academic-score-table thead th:first-child{z-index:4}
@@ -12,8 +14,8 @@
 .academic-score-table tbody tr:nth-child(2)>td{border-top:1px solid #eef2f0;background:#fcfdfc}
 .academic-score-row-label{display:flex;align-items:center;gap:10px;min-height:23px}.academic-score-course{min-width:0;flex:1}
 .academic-score-kind{font-size:12px;font-weight:400;color:var(--muted,#6a817c);white-space:nowrap;flex-shrink:0;margin-left:auto}
-.academic-score-value{display:flex;align-items:center;justify-content:center;gap:3px;min-height:23px}.academic-score-value .info-hint{flex-shrink:0;margin:0}
-.academic-score-number{font-weight:500;color:var(--muted,#6a817c)}.academic-score-number.minimum{color:var(--pine,#185e51);font-weight:600}.academic-score-number.conditional{color:#94601c}.academic-score-number.not-accepted{color:#8f3434}
+.academic-score-value{display:flex;align-items:center;justify-content:center;gap:2px;min-height:23px;flex-wrap:wrap}.academic-score-value .info-hint{flex-shrink:0;margin:0;width:20px;height:24px}
+.academic-score-number{min-width:0;font-weight:500;color:var(--muted,#6a817c)}.academic-score-number.minimum{color:var(--pine,#185e51);font-weight:600}.academic-score-number.conditional{color:#94601c}.academic-score-number.not-accepted{color:#8f3434}
 .academic-score-table [data-academic-score]+[data-academic-score]{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
 .academic-score-variant{display:block;text-align:center;font-size:12px;color:var(--muted,#6a817c);margin-bottom:3px}
 .academic-score-sources{font-size:12px;margin-top:4px}.academic-score-sources a{margin-right:8px}
@@ -21,4 +23,4 @@
 .hint-sources .evidence-btn{display:inline-flex}.hint-sources{font-size:12px;margin-top:6px}
 .academic-scholarship-details{margin:12px 20px;border-top:1px solid var(--line,#d9e5e2);padding-top:10px}.academic-scholarship-details summary{cursor:pointer;font-weight:600}.academic-scholarship-table{min-width:760px;table-layout:fixed;width:100%;font-size:13px}.academic-scholarship-table th:first-child{width:24%}.academic-scholarship-table th:nth-child(2){width:13%}
 [data-entry-group="transfer"] .academic-score-number.minimum{color:#235c8b}[data-entry-group="transfer"] .academic-score-table tr>th:first-child{background:#f2f6fb}
-@media(max-width:620px){.academic-score-table{--academic-name-width:190px}.academic-score-table td,.academic-score-table th{padding:8px 10px}.academic-score-table tbody th{font-size:13px}.academic-score-row-label{flex-wrap:wrap;gap:4px 8px}.academic-score-course{flex-basis:100%}.academic-score-kind{margin-left:0}.academic-score-heading{padding:14px 12px 10px;gap:4px}.academic-score-footnote{padding:10px 12px}}
+@media(max-width:620px){.academic-score-table{--academic-name-width:170px;width:max(100%,calc(var(--academic-name-width) + 120px * var(--academic-project-count)))}.academic-score-table td,.academic-score-table th{padding:8px 6px}.academic-score-table tbody th{font-size:13px}.academic-score-row-label{flex-wrap:wrap;gap:4px 8px}.academic-score-course{flex-basis:100%}.academic-score-kind{margin-left:0}.academic-score-value .info-hint{width:28px;height:32px}.academic-score-heading{padding:14px 12px 10px;gap:4px}.academic-score-footnote{padding:10px 12px}}
