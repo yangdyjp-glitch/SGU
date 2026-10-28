@@ -30,6 +30,7 @@
 .school-detail .compact-rounds th:first-child,.school-detail .compact-rounds td:first-child{min-width:150px;max-width:260px;white-space:normal;overflow-wrap:anywhere}
 .school-card-programs>a{display:inline-flex;align-items:center;gap:4px;color:var(--pine);font-weight:600}.school-card-programs>a svg{width:14px;height:14px}
 .qualification-matrix .acceptance-column a{display:block;white-space:normal;overflow-wrap:anywhere;line-height:1.5}
+.program-label-part{display:inline-block;white-space:nowrap;overflow-wrap:normal;word-break:normal}
 .qualification-overview{min-width:760px;table-layout:fixed}
 .qualification-overview-name{width:260px}.qualification-overview-scope{width:175px}.qualification-overview-info{width:52px}
 .qualification-overview td,.qualification-overview th{padding:8px 12px;vertical-align:top;border-bottom:1px solid var(--line);line-height:1.55}
@@ -73,11 +74,11 @@
 .qualification-scroll-tools input:disabled{cursor:default;opacity:.4}
 .qualification-scroll{overflow:auto;max-height:min(70vh,850px);overscroll-behavior:contain;scrollbar-color:var(--pine) var(--mint);scrollbar-width:auto;scrollbar-gutter:stable;container-type:inline-size;isolation:isolate}
 /* Both matrices use the same field and project columns, regardless of their trailing content. */
-.qualification-scroll :is(.qualification-matrix,.academic-score-table){--matrix-name-width:280px;--matrix-project-max-width:150px;--matrix-project-width:min(var(--matrix-project-max-width),(100cqw - var(--matrix-name-width)) / min(10,var(--matrix-project-count)));--matrix-tail-width:0px;table-layout:fixed;min-width:0;width:max(100%,calc(var(--matrix-name-width) + var(--matrix-project-width) * var(--matrix-project-count) + var(--matrix-tail-width)))}
+.qualification-scroll :is(.qualification-matrix,.academic-score-table){--matrix-name-width:280px;--matrix-project-max-width:150px;--matrix-project-width:min(var(--matrix-project-max-width),(100cqw - var(--matrix-name-width)) / min(10,var(--matrix-project-count)));--matrix-tail-width:0px;table-layout:fixed;min-width:0;width:max(100%,calc(var(--matrix-name-width) + var(--matrix-projects-width,var(--matrix-project-width) * var(--matrix-project-count)) + var(--matrix-tail-width)))}
 .qualification-scroll table:has(thead :is([data-qualification-program],[data-academic-score-program]):nth-child(7)){--matrix-project-max-width:88px}
 .qualification-scroll .qualification-matrix{--matrix-tail-width:400px}
 .qualification-name-column,.academic-score-name-column{width:var(--matrix-name-width)}
-.qualification-program-column,.academic-score-project-column{width:var(--matrix-project-width)}
+.qualification-program-column,.academic-score-project-column{width:max(var(--matrix-project-width),var(--matrix-content-width,0px))}
 .qualification-scroll .qualification-matrix .acceptance-column{width:auto;min-width:0}
 .qualification-matrix{border-collapse:separate;border-spacing:0}
 .qualification-scroll .qualification-matrix thead th{position:sticky;top:0;z-index:3;background:var(--mint);color:var(--pine);box-shadow:0 1px 0 var(--pine);font-weight:700}

@@ -148,6 +148,13 @@ export function buildProgramLabels(programs) {
   return labels;
 }
 
+// A short name and its distinguishing suffix are separate wrapping units.
+// Keep the original label text, including separators, available to readers.
+export function renderProgramLabel(label, esc) {
+  const parts=String(label||'').split(/\s+·\s+/);
+  return parts.map((part,i)=>`<span class="program-label-part">${esc(part)}${i<parts.length-1?' ·':''}</span>`).join(' ');
+}
+
 export function renderProgramScope(ids, programs, ui) {
   const selected = programs.filter(p => ids.includes(p.id));
   const { esc } = ui, labels=ui.programLabel?null:buildProgramLabels(programs), label = ui.programLabel || (p=>labels.get(p.id));

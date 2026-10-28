@@ -82,7 +82,7 @@ test('same-code education subjects get concise, distinct names everywhere withou
     assert.ok(view.html.includes(`data-compare="${p.id}"`));
     const detail=renderProjectDetail(p,{...ui,allPrograms:programs});
     assert.ok(detail.includes(`<h1>${expected[i]}</h1>`));
-    assert.ok(detail.includes(`title="${esc(programOriginalTitle(p))}">${['初等教育','心理教育'][i]}</a>`));
+    assert.ok(detail.includes(`title="${esc(programOriginalTitle(p))}"><span class="program-label-part">${['初等教育','心理教育'][i]}</span></a>`));
     assert.ok(detail.includes(`<dd>${p.name}</dd>`));
     assert.ok(detail.includes(`<dd>${p.channel}</dd>`));
   }
@@ -180,7 +180,7 @@ test('overview pairs abbreviations with full names while qualification headings 
     assert.ok(view.html.includes(`data-program-short>${short}</strong>`));
     assert.ok(view.html.includes(`data-program-full>${full}</span>`));
     const academic=view.renderSection('academic');
-    assert.ok(academic.includes(`title="${esc(programOriginalTitle(p))}">${short}</a>`));
+    assert.ok(academic.includes(`title="${esc(programOriginalTitle(p))}"><span class="program-label-part">${short}</span></a>`));
     assert.doesNotMatch(academic,/data-program-full/);
     assert.equal(view.labels.get(p.id),short);
   }

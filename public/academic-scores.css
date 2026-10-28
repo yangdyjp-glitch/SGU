@@ -16,9 +16,9 @@
 .academic-score-row-label{display:flex;align-items:center;gap:10px;min-height:23px}.academic-score-course{min-width:0;flex:1}
 .academic-score-kind{font-size:12px;font-weight:400;color:var(--muted,#6a817c);white-space:nowrap;flex-shrink:0;margin-left:auto}
 .academic-score-value{display:flex;align-items:center;justify-content:center;gap:2px;min-height:23px}.academic-score-value .info-hint{flex-shrink:0;margin:0;width:20px;height:24px}
-.academic-score-number{min-width:0;text-align:center;font-weight:500;color:var(--muted,#6a817c)}.academic-score-number.minimum{color:var(--pine,#185e51);font-weight:600}.academic-score-number.conditional{color:#94601c}.academic-score-number.not-accepted{color:#8f3434}
+.academic-score-number{min-width:0;flex:0 0 auto;white-space:nowrap;text-align:center;font-weight:500;color:var(--muted,#6a817c)}.academic-score-number.minimum{color:var(--pine,#185e51);font-weight:600}.academic-score-number.conditional{color:#94601c}.academic-score-number.not-accepted{color:#8f3434}
 .academic-score-table [data-academic-score]+[data-academic-score]{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
-.academic-score-variant{display:block;text-align:center;font-size:12px;color:var(--muted,#6a817c);margin-bottom:3px}
+.academic-score-variant{display:block;width:max-content;white-space:nowrap;text-align:center;font-size:12px;color:var(--muted,#6a817c);margin:0 auto 3px}
 .academic-score-sources{font-size:12px;margin-top:4px}.academic-score-sources a{margin-right:8px}
 .academic-score-footnote{margin:0;padding:12px 20px;font-size:12px;color:var(--muted,#6a817c)}
 .hint-sources .evidence-btn{display:inline-flex}.hint-sources{font-size:12px;margin-top:6px}
