@@ -10,6 +10,8 @@ import { buildProgramLabels, buildProgramTitles, buildProgramNames, programCode,
 import { groupMaterials, renderMaterialCatalog } from './material-presentation.js';
 import { conciseText, renderReadableText, joinCopy } from './plain-language.js';
 import { renderAcademicScores } from './academic-scores.js';
+import { matchesMajors, getProgramMajors } from './program-majors.js';
+import { majorOptions, renderMajors } from './program-majors-ui.js';
 
 export const schoolHref = name => `#school/${encodeURIComponent(name)}`;
 const channelOrder=value=>/一年级|first.year|freshman/i.test(value)?0:/编入|转入|transfer/i.test(value)?2:1;
@@ -81,14 +83,15 @@ export function schoolYearPrograms(name, allPrograms, filters = {}) {
   const year = years.includes(Number(filters.year)) ? Number(filters.year) : years[0];
   const yearPrograms = schoolPrograms.filter(p => p.year === year).sort((a,b)=>channelOrder(a.channel)-channelOrder(b.channel)||a.name.localeCompare(b.name,'zh-CN')||a.channel.localeCompare(b.channel,'zh-CN'));
   const entryGroup = filters.entryGroup === 'transfer' ? 'transfer' : 'application';
+  const major=filters.major||'',majorPrograms=yearPrograms.filter(p=>matchesMajors(p,major));
   const counts = { application:0, transfer:0 };
-  yearPrograms.forEach(p=>counts[programEntryGroup(p)]++);
-  return { years, year, entryGroup, counts, programs:yearPrograms.filter(p=>programEntryGroup(p)===entryGroup) };
+  majorPrograms.forEach(p=>counts[programEntryGroup(p)]++);
+  return { years, year, entryGroup, counts, major, majorChoices:majorOptions(schoolPrograms), programs:majorPrograms.filter(p=>programEntryGroup(p)===entryGroup) };
 }
 
 export function createSchoolOverview(name, allPrograms, ui, filters = {}) {
   const { esc, icon, button, evidence, showSources = false, selectedCompare = new Set() } = ui;
-  const { years, year, programs, entryGroup, counts } = schoolYearPrograms(name, allPrograms, filters);
+  const { years, year, programs, entryGroup, counts, major, majorChoices } = schoolYearPrograms(name, allPrograms, filters);
   if (!years.length) return { html:'<div class="empty">尚未收录该学校的项目。</div>', programs, renderSection:()=>'' };
   const groupName = entryGroupLabel(entryGroup);
   const labels = buildProgramLabels(programs);
@@ -125,13 +128,13 @@ export function createSchoolOverview(name, allPrograms, ui, filters = {}) {
   const entrySwitch = `<div class="school-entry-bar"><a class="school-projects-label" href="${schoolLink}" data-school-section-link="projects">项目</a><div class="entry-switch" role="group" aria-label="切换申请项目与编入项目">${['application','transfer'].map(group=>`<button type="button" data-school-entry="${group}" aria-pressed="${group===entryGroup}">${entryGroupLabel(group)} <span>${counts[group]}</span></button>`).join('')}</div></div>`;
   const html = `<div class="school-detail" data-school-name="${esc(name)}" data-school-year-value="${year}" data-entry-group="${entryGroup}">
     <div class="hierarchy-breadcrumb"><a href="#programs">学校与项目</a>${icon('chevron')}<span>${esc(name)}</span></div>
-    <section class="panel section school-heading"><div class="school-title"><div><h1>${esc(name)}</h1><p>${year} 入学 · ${groupName} ${programs.length} 个</p></div><div class="school-controls"><label>入学年份<select data-school-year>${years.map(value => `<option value="${value}" ${value === year ? 'selected' : ''}>${value} 年</option>`).join('')}</select></label>${programs.length?button(icon('compare') + ' 比较所选项目 <span data-compare-count>'+programs.filter(p=>selectedCompare.has(p.id)).length+'</span>', 'compare-programs', '', 'sm')+button('清空选择','clear-compare','','ghost sm'):''}</div></div>
+    <section class="panel section school-heading"><div class="school-title"><div><h1>${esc(name)}</h1><p>${year} 入学 · ${groupName} ${programs.length} 个</p></div><div class="school-controls"><label>专业<select data-school-major>${majorChoices.map(([value,label])=>`<option value="${esc(value)}" ${value===major?'selected':''}>${esc(label)}</option>`).join('')}</select></label><label>入学年份<select data-school-year>${years.map(value => `<option value="${value}" ${value === year ? 'selected' : ''}>${value} 年</option>`).join('')}</select></label>${programs.length?button(icon('compare') + ' 比较所选项目 <span data-compare-count>'+programs.filter(p=>selectedCompare.has(p.id)).length+'</span>', 'compare-programs', '', 'sm')+button('清空选择','clear-compare','','ghost sm'):''}</div></div>
     </section>
     <nav class="rule-nav school-overview-nav" aria-label="学校要求导航">${entrySwitch}<div class="school-section-links">${nav.map(([key, title]) => `<a href="${schoolLink}/${key}" data-school-section-link="${key}">${title}</a>`).join('')}</div></nav>
     ${programs.length?`<section class="panel section school-projects" id="detail-projects"><div class="toolbar"><label class="search">${icon('search')}<input data-school-project-search aria-label="搜索本校项目" placeholder="搜索项目、专业或申请类型"></label><span class="muted small" data-school-project-count>全部 ${programs.length} 个${groupName}${programs.length>8?' · 列表内可滚动查看':''}</span></div>
-      <div class="table-wrap school-project-scroll ${programs.length>8?'many-projects':''}" tabindex="0" aria-label="本年度全部项目列表"><table class="school-program-table"><thead><tr><th>项目</th><th>申请类型</th><th>入学期</th><th>版本</th><th>比较</th></tr></thead><tbody>${programs.map(p => `<tr data-school-project="${esc([p.name,p.code,p.englishName,p.direction,p.channel,programFullName(p),programEntryLabel(p),rowTitles.get(p.id),label(p.id)].join(' ').toLowerCase())}"><td><a class="school-project-link" href="#program/${esc(p.id)}" title="${esc(programOriginalTitle(p))}">${renderProgramOverviewName(p,rowTitles.get(p.id),esc)}${icon('chevron')}</a></td><td><span class="project-entry" title="${esc(p.channel)}">${esc(programEntryLabel(p))}</span></td><td>${[...new Set(p.rounds.map(r => r.intake))].map(esc).join(' / ')}</td><td>v${esc(p.version)}</td><td><input type="checkbox" data-compare="${esc(p.id)}" aria-label="比较${esc(label(p.id))}" ${selectedCompare.has(p.id) ? 'checked' : ''}></td></tr>`).join('')}</tbody></table></div><p class="school-project-empty hidden">没有找到项目；清空搜索可查看本年度全部项目。</p>
+      <div class="table-wrap school-project-scroll ${programs.length>8?'many-projects':''}" tabindex="0" aria-label="本年度筛选后的项目列表"><table class="school-program-table"><thead><tr><th>项目 / 专业</th><th>申请类型</th><th>入学期</th><th>版本</th><th>比较</th></tr></thead><tbody>${programs.map(p => `<tr data-school-project="${esc([p.name,p.code,p.englishName,p.direction,p.channel,...getProgramMajors(p),programFullName(p),programEntryLabel(p),rowTitles.get(p.id),label(p.id)].join(' ').toLowerCase())}"><td><a class="school-project-link" href="#program/${esc(p.id)}" title="${esc(programOriginalTitle(p))}">${renderProgramOverviewName(p,rowTitles.get(p.id),esc)}${icon('chevron')}</a>${renderMajors(p,esc)}</td><td><span class="project-entry" title="${esc(p.channel)}">${esc(programEntryLabel(p))}</span></td><td>${[...new Set(p.rounds.map(r => r.intake))].map(esc).join(' / ')}</td><td>v${esc(p.version)}</td><td><input type="checkbox" data-compare="${esc(p.id)}" aria-label="比较${esc(label(p.id))}" ${selectedCompare.has(p.id) ? 'checked' : ''}></td></tr>`).join('')}</tbody></table></div><p class="school-project-empty hidden">没有找到项目；清空搜索可查看当前专业的全部项目。</p>
       <div class="source-panel"><div class="source-summary"><strong>原文与版本</strong><span>下方全部内容对应当前 ${programs.length} 个${groupName}。</span></div><div class="source-actions"><button type="button" class="source-switch" role="switch" aria-checked="${showSources}" data-act="toggle-sources"><span>显示原文出处</span><span class="switch-track" aria-hidden="true"></span></button>${documents.length>2?`<details class="school-source-list"><summary>完整原文（${documents.length} 份）</summary><div>${sourceLinks}</div></details>`:sourceLinks}</div></div>
-    </section>`:`<section class="panel section" id="detail-projects"><div class="empty"><strong>${year} 年尚未收录${groupName}</strong><p>可切换到${entryGroupLabel(entryGroup==='transfer'?'application':'transfer')}，或查看其他入学年份。</p></div></section>`}
+    </section>`:`<section class="panel section" id="detail-projects"><div class="empty"><strong>${major?'没有符合所选专业的'+groupName:year+' 年尚未收录'+groupName}</strong><p>可选择全部专业、切换到${entryGroupLabel(entryGroup==='transfer'?'application':'transfer')}，或查看其他入学年份。</p></div></section>`}
     ${ui.deferSections?placeholders:nav.map(([key])=>renderSection(key)).join('')}
   </div>`;
   return { html, programs, labels, titles, entryGroup, renderSection, resolveInfo };

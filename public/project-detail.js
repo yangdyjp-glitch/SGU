@@ -11,6 +11,7 @@ import { buildProgramLabels, buildProgramTitles, programTitle, programEntryLabel
 import { groupMaterials, renderMaterialCatalog } from './material-presentation.js';
 import { conciseText, renderReadableText, joinCopy } from './plain-language.js';
 import { renderAcademicScores } from './academic-scores.js';
+import { renderMajors } from './program-majors-ui.js';
 export { buildProjectView, pathDescription } from './requirement-model.js';
 
 export function renderProjectDetail(p, ui) {
@@ -31,7 +32,7 @@ export function renderProjectDetail(p, ui) {
   const nav = [['academic', '学历与资格'], ['language', '语言成绩'], ['materials', '申请材料'], ['rounds', '申请轮次'], ...(view.post.length ? [['after', '后续要求']] : []),...(p.semanticVersion===1?[['complete','全部要求']]:[])];
   return `<div class="project-detail" data-entry-group="${programEntryGroup(p)}"><div class="hierarchy-breadcrumb"><a href="#programs">学校与项目</a>${icon('chevron')}<a href="#school/${encodeURIComponent(p.school)}">${esc(p.school)}</a>${icon('chevron')}<span>${esc(displayLabel(p))}</span></div>
     <section class="panel section project-heading-panel">
-      <div class="program-title"><div><div class="flex wrap">${tag(p.school)}${tag(p.year + ' 入学')}${tag(p.degree)}</div><h1>${esc(title)}</h1><p class="muted small">${esc(programEntryLabel(p))}${p.partner ? ' · 合作院校：' + esc(p.partner) : ''}</p><details class="program-original"><summary>原始名称与招生方式</summary><dl><dt>项目全称</dt><dd>${esc(p.name)}</dd>${p.englishName?`<dt>英文全称</dt><dd>${esc(p.englishName)}</dd>`:''}<dt>招生方式</dt><dd>${esc(p.channel||'未注明')}</dd></dl></details></div><div class="project-actions">${button(icon('edit') + ' 编辑规则', 'edit-program', `data-id="${p.id}"`)}${button('选择学生检查', 'select-student', `data-id="${p.id}"`, 'primary')}</div></div>
+      <div class="program-title"><div><div class="flex wrap">${tag(p.school)}${tag(p.year + ' 入学')}${tag(p.degree)}</div><h1>${esc(title)}</h1><p class="muted small">${esc(programEntryLabel(p))}${p.partner ? ' · 合作院校：' + esc(p.partner) : ''}</p>${renderMajors(p,esc)}<details class="program-original"><summary>原始名称与招生方式</summary><dl><dt>项目全称</dt><dd>${esc(p.name)}</dd>${p.englishName?`<dt>英文全称</dt><dd>${esc(p.englishName)}</dd>`:''}<dt>招生方式</dt><dd>${esc(p.channel||'未注明')}</dd></dl></details></div><div class="project-actions">${button(icon('edit') + ' 编辑规则', 'edit-program', `data-id="${p.id}"`)}${button('选择学生检查', 'select-student', `data-id="${p.id}"`, 'primary')}</div></div>
       <div class="source-panel detail-section" id="detail-sources"><div class="source-summary"><strong>原文与版本</strong><span>${esc(p.year)} 招生手册 · v${esc(p.version)}</span><span class="source-audience">${esc(view.audience)}</span></div><div class="source-actions"><button type="button" class="source-switch" role="switch" aria-checked="${showSources}" data-act="toggle-sources"><span>显示原文出处</span><span class="switch-track" aria-hidden="true"></span></button>${sourceLinks}${button('修改记录', 'program-history', `data-id="${p.id}"`, 'ghost sm')}</div></div>
       <nav class="rule-nav" aria-label="项目要求导航">${nav.map(([key, label]) => `<a href="#program/${p.id}/${key}">${label}</a>`).join('')}</nav>
     </section>

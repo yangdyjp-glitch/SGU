@@ -20,7 +20,7 @@ export function blankDocumentProgram(scope, sourceId) {
   return {
     id: '', name: scope.englishName || '', englishName: scope.englishName || '',
     school: normalizeSchool(scope.school), year: Number(scope.year), channel: scope.channel || '',
-    direction: '', degree: '', partner: null, version: 0, reviewed: false, reviewNote: '',
+    direction: '', majors: [], degree: '', partner: null, version: 0, reviewed: false, reviewNote: '',
     paths: [], rounds: [], language: [], waivers: [], materials: [], hardConditions: [], requirements: [],
     languagePolicy: { validYears: null, availabilityRequired: null, allowSuperscore: null, excludedFormats: [], source: source() },
     tuition: { status: 'unspecified', amount: null, currency: '', period: '', year: Number(scope.year), source: source() },

@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve, extname, sep } from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
 import { db,now,transaction,event,getPrograms,getProgram,getProgramVersions,listStudents,getStudent,saveStudent,saveProgram,passwordHash,passwordVerify,newSession,sessionUser,hashToken,getDocuments,getDocument,getDocumentSummaries,saveDocument } from './lib/store.mjs';
+import { presentProgramMajors } from './public/program-majors.js';
 import { matchAll,checkCombination,validateProgram,validDate } from './lib/engine.mjs';
 import { validateStudentEducation } from './lib/education.mjs';
 import { parseQuery,queryPrograms,parseStudentText } from './lib/query.mjs';
@@ -61,7 +62,7 @@ const server=http.createServer(async(req,res)=>{
    if(path==='/api/auth/logout'&&req.method==='POST'){await db.prepare('DELETE FROM sessions WHERE token=?').run(hashToken(token));return send(res,200,{ok:true},{'Set-Cookie':'sgu_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0'});}
    if(path==='/api/bootstrap'&&req.method==='GET'){
     const [students,programs,documents,revision,team]=await Promise.all([listStudents(),getPrograms(),getDocumentSummaries(),db.prepare("SELECT value FROM meta WHERE key='revision'").get(),db.prepare('SELECT id,name,login FROM users').all()]);
-    return send(res,200,{user:safeUser(user),csrf:user.csrf,students,programs,documents,revision:revision?.value,capabilities:{model:llmEnabled(),mineru:Boolean(process.env.MINERU_BIN),pdf:cloudPDFEnabled()?'cloud':process.env.MINERU_BIN?'mineru':null},team});
+    return send(res,200,{user:safeUser(user),csrf:user.csrf,students,programs:programs.map(presentProgramMajors),documents,revision:revision?.value,capabilities:{model:llmEnabled(),mineru:Boolean(process.env.MINERU_BIN),pdf:cloudPDFEnabled()?'cloud':process.env.MINERU_BIN?'mineru':null},team});
    }
    if(path==='/api/revision'&&req.method==='GET')return send(res,200,{revision:(await db.prepare("SELECT value FROM meta WHERE key='revision'").get())?.value});
    if(path==='/api/openai'&&req.method==='GET')return send(res,200,await openAIStatus());

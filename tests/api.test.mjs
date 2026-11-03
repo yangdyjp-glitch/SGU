@@ -66,6 +66,18 @@ test('authenticated team workflow, version history, conflicts and ingestion',asy
   const restored=await req('/restore',{programId:p.id,version:oldVersion,expectedVersion:loaded.version});assert.equal(restored.status,200);assert.deepEqual(restored.body.academicTests,academic);
   assert.deepEqual((await req('/matches/'+originalMatch.id)).body,originalMatch);
  });
+ await t.test('majors save, filter, clear and restore while preserving prior match snapshots',async()=>{
+  const p=(await req('/bootstrap')).body.programs.find(p=>p.id==='ISSE');
+  assert.ok(Array.isArray(p.majors));assert.equal(p.majorsInferred,true);
+  const initial=p.version,saved=await req('/programs',{program:{...p,majors:['Economics','计算机科学'],majorsInferred:false},expectedVersion:initial,note:'专业字段保存与查询回归'});
+  assert.equal(saved.status,200);assert.deepEqual(saved.body.majors,['经济学','计算机与信息科学']);
+  const answer=(await req('/query',{query:{majors:['经济学']}})).body;assert.ok(answer.matched.some(x=>x.id===p.id));
+  const invalid=await req('/programs',{program:{...saved.body,majors:'经济学'},expectedVersion:saved.body.version,note:'错误字段校验'});assert.equal(invalid.status,400);
+  const cleared=await req('/programs',{program:{...saved.body,majors:[]},expectedVersion:saved.body.version,note:'留空专业等待核对'});assert.equal(cleared.status,200);
+  assert.deepEqual((await req('/bootstrap')).body.programs.find(x=>x.id===p.id).majors,[]);
+  const restore=await req('/restore',{programId:p.id,version:initial,expectedVersion:cleared.body.version});assert.equal(restore.status,200);assert.equal(restore.body.majorsInferred,true);
+  assert.deepEqual((await req('/matches/'+originalMatch.id)).body,originalMatch);
+ });
  await t.test('new-school documents use isolated drafts and publish only after complete review',async()=>{
   const filename='Waseda-2027.md',text='# Application Guide for AO April Entry (Overseas) 2027\n# WASEDA UNIVERSITY\n# School of International Liberal Studies\nTOEFL iBT is accepted.\nThe first language is Japanese.';
   const uploaded=(await req('/documents',{filename,base64:Buffer.from(text).toString('base64')})).body;
