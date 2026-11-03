@@ -1,0 +1,86 @@
+// Academic vocabulary shared by project labels, queries and document import.
+const variants=Object.fromEntries('學学 經经 濟济 経经 済济 語语 國国 際际 関关 關关 係系 會会 計计 營营 営营 業业 門门 資资 訊讯 體体 醫医 療疗 護护 薬药 藥药 藝艺 術术 設设 觀观 観观 遊游 機机 電电 氣气 気气 數数 據据 環环 統统 質质 報报 傳传 識识 應应 応应 導导 養养 農农 倫伦 聞闻 築筑 態态 綠绿 緑绿 總总 総总 與与 創创 試试 験验 驗验'.split(' ').map(pair=>[...pair]));
+export const majorTextKey=value=>String(value??'').normalize('NFKC').replace(/[\s\u200b]+/g,' ').replace(/./gu,c=>variants[c]||c).trim();
+export const majorDefinitions=[
+ ['经济学',/经济(?:学)?|\beconomics?\b|\bpolitical economy\b/i,['Economics','経済学','經濟學']],
+ ['商学与管理',/商科|商学|经营|商务|商业|管理|会计|金融|市场营销|创业|ビジネス|\b(?:business|management|accounting|finance|marketing|entrepreneurship)\b/i,['商科','商学','经营学','工商管理','Business','Business Administration','Management']],
+ ['法学',/法学|法律|\b(?:law|legal studies)\b/i,['法律','Law']],
+ ['政治学',/政治|\bpolitics\b|\bpolitical (?:science|economy)\b/i,['Political Science']],
+ ['国际关系',/国际关系|\binternational relations\b/i,['International Relations']],
+ ['公共政策',/政策|治理|\bpolicy\b|\bgovernance\b/i,['政策科学','Policy Science','Public Policy']],
+ ['社会学与社会科学',/社会学|社会科学|社会研究|社会共生|社会创新|\bsociology\b|\bsocial (?:sciences?|studies)\b|\bdiversity studies\b/i,['社会学','社会科学','Sociology','Social Sciences']],
+ ['社会福利',/社会福祉|社会福利|社会工作|\bsocial (?:welfare|work)\b/i,['Social Welfare','Social Work']],
+ ['心理学',/心理|\bpsycholog(?:y|ical studies)\b/i,['Psychology']],
+ ['教育学',/教育|教师培养|教师养成|\b(?:teacher training|education(?:al studies)?)\b/i,['Education']],
+ ['文学与语言文化',/文学|语言(?:学|文化)|语学|日本语|外国语|文化(?:学)?|人文(?:学)?|哲学|伦理学|\bhumanities\b|\bliterature\b|\blinguistics\b|\bcultur(?:al studies|e)\b|\bphilosophy\b/i,['文学','语言学','人文学','Humanities','Literature','Linguistics']],
+ ['新闻与传播',/新闻|媒体|传媒|传播|\bjournalism\b|\bmedia\b|\bcommunication studies\b/i,['新闻学','传播学','Journalism','Media Studies']],
+ ['国际与区域研究',/区域研究|地域发展|地域创生|国际研究|国际学部|国际学科|国际综合|国际共创|国际创新|全球研究|全球议题|亚太学|日本研究|现代日本学|\b(?:global|international|regional|japan|japanese|asia pacific) (?:studies|issues)\b|\bregional development\b|\bglobal innovation studies\b/i,['国际研究','区域研究','日本研究','Global Studies','International Studies']],
+ ['综合教养',/教养|博雅|通识|文理综合|\bliberal (?:arts|studies)\b/i,['博雅教育','国际教养','Liberal Arts']],
+ ['计算机与信息科学',/计算机|软件(?:工程|科学)|信息(?:科学|工程|工学|理工|系统|协作|网络|学)|情报|\bcomputer(?: science)?\b|\bsoftware engineering\b|\binformatics\b|\binformation (?:sciences?|engineering|systems|networking)\b|\b(?:ict|cs)\b/i,['计算机','计算机科学','信息科学','Computer Science','Information Science','CS']],
+ ['数据科学与人工智能',/数据科学|人工智能|データサイエンス|\bdata science\b|\bartificial intelligence\b|\bai\b/i,['数据科学','人工智能','Data Science','AI']],
+ ['数学',/数学|数理|\bmathematic(?:s|al(?: sciences?)?)\b|\bmaths?\b/i,['Mathematics','Math','Maths']],
+ ['物理学',/物理|\bphysics\b|\bphysical sciences?\b/i,['物理','Physics']],
+ ['化学',/化学|\bchemistry\b|\bchemical\b/i,['Chemistry']],
+ ['材料科学',/材料(?:科学|工程|工学|学)|(?:生物|复合|纳米|新)材料|材料(?=专业|方向|学科)|\bmaterials? (?:sciences?|engineering)\b/i,['材料学','材料工程','Materials Science','Materials Engineering']],
+ ['生物与生命科学',/生物|生命科学|生命理工|\bbiolog(?:y|ical)\b|\blife sciences?\b|\bbiosciences?\b|\bbioresource\b/i,['生物学','生命科学','Biology','Life Sciences']],
+ ['地球科学',/地球|地学(?=专业|方向|学科|课程|部|$)|地质|\bgeosciences?\b|\bearth science\b|\bgeology\b/i,['Geoscience','Earth Science']],
+ ['机械与汽车工程',/机械|汽车工程|\bmechanical\b|\bautomotive\b/i,['机械工程','汽车工程','Mechanical Engineering']],
+ ['电气电子与通信工程',/电气|电机|电子|通信工|自动化|\belectrical\b|\belectronic(?:s)?\b|\bcommunications? engineering\b/i,['电气工程','电子工程','通信工程','Electrical Engineering']],
+ ['土木工程',/土木|\bcivil engineering\b/i,['Civil Engineering']],
+ ['建筑学',/建筑|\barchitecture\b/i,['Architecture']],
+ ['环境与可持续发展',/环境|可持续|持続可能|\benvironmental\b|\bsustainability\b/i,['环境科学','可持续发展','Environmental Science','Sustainability']],
+ ['农业与食品科学',/农学|农业|食品(?:科学|生命科学|工学|工程)|森林|\bagricultur(?:e|al)\b|\bfood sciences?\b|\bforestry\b/i,['农学','食品科学','Agriculture']],
+ ['医学与健康科学',/医学|医疗|护理|看护|健康|保健|\bhealth(?:care)?\b|\bnursing\b|\bmedical\b/i,['医学','护理学','健康科学','Nursing']],
+ ['药学',/药学|药科|\bpharmacy\b|\bpharmaceutical\b|\bpharmacology\b/i,['Pharmacy']],
+ ['体育科学',/体育|スポーツ|\bsports?\b/i,['体育学','Sports Science']],
+ ['艺术与设计',/艺术|美术|芸术|\b(?:fine|visual) arts\b|\bart and design\b/i,['艺术','艺术设计','Art and Design']],
+ ['旅游与酒店管理',/旅游|观光|酒店|\btourism\b|\bhospitality\b/i,['旅游管理','酒店管理','Tourism']],
+ ['综合理学',/综合理学|综合科学|国际科学|国际总合理学|\bintegrated (?:science|arts and sciences)\b/i,['理学','Science']],
+ ['综合工学',/综合工学|综合工程|工学部|工学院|工学科学|工程与应用科学|绿色工程|绿色技术|机能创造|工程(?=专业|方向)|\bengineering\b|\bgreen technology\b/i,['工学','工程','Engineering']],
+ ['营养科学',/营养(?:学|科学)?|栄养(?:学|科学)?|\bnutrition(?:al)?(?: sciences?)?\b|\bdietetics\b/i,['营养学','Nutritional Sciences','Nutrition']],
+ ['生物医学工程',/生物医学工程|生体医工学|\bbiomedical engineering\b/i,['生体医工学','Biomedical Engineering']],
+ ['天文学',/天文学|宇宙科学|\bastronomy\b/i,['Astronomy']]
+];
+const engineeringSubjects={civil:'土木工程',mechanical:'机械与汽车工程',electrical:'电气电子与通信工程',electronic:'电气电子与通信工程',communications:'电气电子与通信工程',communication:'电气电子与通信工程',chemical:'化学',biological:'生物与生命科学',environmental:'环境与可持续发展',materials:'材料科学',material:'材料科学',computer:'计算机与信息科学',software:'计算机与信息科学'};
+const engineeringNames=Object.keys(engineeringSubjects).join('|');
+const coordinatedEngineering=new RegExp('\\b(?:'+engineeringNames+')(?:\\s*(?:,\\s*(?:(?:and|&)\\s+)?|\\s+(?:and|&)\\s+)(?:'+engineeringNames+'))+\\s+(?:systems\\s+)?engineering\\b','i');
+// A complete compound owns its component words; independent phrases still add
+// their own labels (e.g. business law + business management retains both).
+export const majorPhrases=[
+ [coordinatedEngineering,text=>[...text.toLowerCase().matchAll(new RegExp('\\b(?:'+engineeringNames+')\\b','g'))].map(m=>engineeringSubjects[m[0]])],
+ [/\bpolitical economy\b/i,['经济学','政治学']],
+ [/\binternational culture and communication studies\b/i,['文学与语言文化']],
+ [/文化学(?:科|类|群)?|\b(?:intercultural|transcultural) (?:communication|studies)\b/i,['文学与语言文化']],
+ [/天文学|\bastronomy\b/i,['天文学']],
+ [/(?:商务|商事|商业|企业|经济|金融|国际企业关系)法(?:学)?|\b(?:business|commercial|corporate|economic) law\b/i,['法学']],
+ [/电子商务|电子商业|\be[- ]?commerce\b|\belectronic (?:commerce|business)\b/i,['商学与管理']],
+ [/(?:体育|运动)(?:商业|管理)|\bsports? (?:business|management)\b/i,['商学与管理']],
+ [/(?:旅游|观光|酒店)(?:与酒店|和酒店)?管理|\b(?:tourism|hospitality)(?: (?:and|&) (?:hospitality|tourism))? management\b/i,['旅游与酒店管理']],
+ [/社会心理(?:学)?|\bsocial psychology\b/i,['心理学']],
+ [/生物医学工程|生体医工学|\bbiomedical engineering\b/i,['生物医学工程']],
+ [/医学物理(?:学)?|\bmedical physics\b/i,['物理学']],
+ [/(?:医学|医疗|健康|生物)信息学|\b(?:medical|health|biomedical|bio)informatics\b|\b(?:medical|health) informatics\b/i,['计算机与信息科学']],
+ [/金融工程|\bfinancial engineering\b/i,['商学与管理']],
+ [/公共管理|行政管理|\bpublic administration\b/i,['公共政策']],
+ [/环境管理|\benvironmental management\b/i,['环境与可持续发展']],
+ [/信息管理|\binformation management\b/i,['计算机与信息科学']],
+ [/物理治疗(?:学)?|\bphysical therapy\b|\bphysiotherapy\b/i,['医学与健康科学']],
+ [/生物材料(?:科学)?|\bbiomaterials\b/i,['材料科学']],
+ [/生物化学|\bbiochemistry\b/i,['化学','生物与生命科学']],
+ [/环境经济学|\benvironmental economics\b/i,['经济学']],
+ [/(?:体育|运动|スポーツ)营养(?:学|科学)?|\bsports? nutrition\b/i,['营养科学']],
+ [/(?:计算机|软件)(?:架构|体系结构)|\b(?:computer|software) architecture\b/i,['计算机与信息科学']],
+ [/(?:媒体|体育|心理|运动|系统)信息学|心理与(?:体育|运动)信息学|\b(?:media|sports?|psychological|system) informatics\b|\bpsychological and sports? informatics\b/i,['计算机与信息科学']],
+ [/\binformation sciences? and arts\b/i,['计算机与信息科学','艺术与设计']],
+ [/信息与数理科学/i,['计算机与信息科学','数学']],
+ [/自动化(?:学科)?/i,['电气电子与通信工程']],
+ [/通识教育|博雅教育|\bliberal arts education\b/i,['综合教养']],
+ [/\bfood and life sciences?\b/i,['生物与生命科学','农业与食品科学']],
+ [/\bglobal and (?:regional|interdisciplinary) studies\b/i,['国际与区域研究']],
+ [/\bglobal and transcultural studies\b/i,['文学与语言文化','国际与区域研究']],
+ [/文化[、, ]*社会与媒体/i,['社会学与社会科学','文学与语言文化','新闻与传播']],
+ [/社会与(?:全球)?文化/i,['社会学与社会科学','文学与语言文化']],
+ [/日本语教师(?:培养|养成)|\bjapanese language teacher training\b/i,['教育学','文学与语言文化']]
+];
+// Mask administrative contexts before matching, including in mixed questions.
+export const nonAcademicMajorText=/(?:数学|物理|化学|生物|历史|地理|经济)(?:的)?(?:成绩|考试|科目|分数)|\b(?:mathematics|physics|chemistry|biology|economics) (?:exam|test|score|grade)s?\b|机械地|(?:软件|程序|系统)(?:运行|开发|测试)?环境|(?:旅游|观光)签证|酒店(?:住宿|预订)|住宿酒店|申请材料|入学材料|提交材料|材料清单|材料准备|材料要求|语言(?:成绩|考试|要求|条件|证明|政策|豁免|能力)(?:政策|要求|条件)?|语学(?:考试|试验|成绩|要求)|(?:英语|日语|日本语)(?:基准|轨道|授课|成绩|考试|要求)|(?:招生|申请|入学|学费|奖学金|豁免|免试)政策|(?:家庭)?经济(?:状况|条件|能力|证明|担保|困难|负担)|金融(?:证明|担保)|健康(?:状况|证明|检查)|身体健康|(?:学历|教育)(?:经历|背景|年限|资格|要求|证明)|方法学|教学方法|\blanguage (?:requirements?|tests?|scores?|proficiency|waivers?)\b|\badmission(?:s)? polic(?:y|ies)\b|\bcomputer[- ](?:based|delivered)\b|\bhealth certificates?\b|\bfinancial (?:proof|guarantee|support)\b|\bAI(?=[-_]\d)|AI(?:帮|辅助|查询|整理)/gi;
