@@ -19,7 +19,8 @@ const definitions = [
  ['数据科学与人工智能', /数据科学|人工智能|データサイエンス|\bdata science\b|\bartificial intelligence\b|\bai\b/i, ['数据科学','人工智能','Data Science','AI']],
  ['数学', /数学|数理|\bmathematics\b|\bmathematical\b/i, ['Mathematics']],
  ['物理学', /物理|\bphysics\b|\bphysical science\b/i, ['物理','Physics']],
- ['化学', /化学|\bchemistry\b|\bchemical\b/i, ['Chemistry']],
+ // 文化学科／文化学类 describe cultural studies, not chemistry.
+ ['化学', /(?<!文)化学|\bchemistry\b|\bchemical\b/i, ['Chemistry']],
  ['材料科学', /材料|\bmaterials science\b/i, ['Materials Science']],
  ['生物与生命科学', /生物|生命科学|生命理工|\bbiology\b|\bbiological\b|\blife sciences?\b|\bbiosciences?\b/i, ['生物学','生命科学','Biology','Life Sciences']],
  ['地球科学', /地球|地学|地質|\bgeoscience\b|\bearth science\b|\bgeology\b/i, ['Geoscience','Earth Science']],

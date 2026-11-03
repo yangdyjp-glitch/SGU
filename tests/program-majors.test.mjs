@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {getProgramMajors,normalizeMajors,majorsAreInferred,presentProgramMajors,matchesMajors,majorFilterOptions,unspecifiedMajor} from '../public/program-majors.js';
+import {getProgramMajors,normalizeMajors,majorsFromText,majorsAreInferred,presentProgramMajors,matchesMajors,majorFilterOptions,unspecifiedMajor} from '../public/program-majors.js';
 import {renderMajorEditor,gatherMajors,renderMajors} from '../public/program-majors-ui.js';
 import {parseQuery,queryPrograms} from '../lib/query.mjs';
 import {validateProgram} from '../lib/engine.mjs';
@@ -33,6 +33,42 @@ test('multi-major filters use OR within majors and preserve explicit unknowns an
  assert.equal(matchesMajors(empty,unspecifiedMajor),true);assert.equal(matchesMajors(empty,'经济学'),false);
  assert.deepEqual(majorFilterOptions([p,empty,{majors:['金融科技']}]),['经济学','计算机与信息科学','金融科技',unspecifiedMajor]);
  assert.deepEqual(normalizeMajors(['','  ','Computer Science','计算机科学']),['计算机与信息科学']);
+});
+
+test('cultural studies do not imply chemistry while genuine chemistry disciplines remain searchable',()=>{
+ for(const text of ['国际政策文化学科','国際政策文化学科','日本语日本文化学类','日本語・日本文化学類','人文文化学群']){
+  assert.deepEqual(majorsFromText(text),text.includes('政策')?['公共政策','文学与语言文化']:['文学与语言文化'],text);
+  assert.equal(matchesMajors({direction:text},'化学'),false,text);
+ }
+ for(const text of ['化学','应用化学科','応用化学科','化学工程','生物化学','Chemistry','Chemical Engineering','文化学科、化学科','化学与文化学']){
+  assert.ok(majorsFromText(text).includes('化学'),text);
+  assert.equal(matchesMajors({direction:text},'化学'),true,text);
+ }
+ assert.deepEqual(parseQuery('国际政策文化学专业').majors,['公共政策','文学与语言文化']);
+});
+
+test('chemistry with IELTS 6 excludes policy and teacher training, and keeps unknown thresholds uncertain',()=>{
+ const seed=seedPrograms()[0],ielts=(score,minimumStatus)=>[{exam:'IELTS Academic Module',score,minimumStatus,source:{page:1}}];
+ const programs=[
+  {...seed,id:'policy',school:'中央大学',name:'综合政策学院',englishName:'総合政策学部',direction:'政策科学科、国际政策文化学科；只选一个',language:ielts(4.5,'stated')},
+  {...seed,id:'teacher',school:'筑波大学',name:'Japan-Expert学士项目—日语教师培养方向',englishName:'Japan-Expert (Bachelor Degree) Program — Japanese Language Teacher Training Course',direction:'人文文化学群日本语日本文化学类／日语教师培养',language:ielts(null,'unspecified')},
+  {...seed,id:'chemistry-6',majors:['化学'],language:ielts(6,'stated')},
+  {...seed,id:'chemistry-6.5',majors:['化学'],language:ielts(6.5,'stated')},
+  {...seed,id:'chemistry-unknown',majors:['化学'],language:ielts(null,'unspecified')},
+  {...seed,id:'chemistry-no-minimum',majors:['化学'],language:ielts(null,'no-minimum')},
+  {...seed,id:'chemistry-inferred',direction:'应用化学科',language:ielts(6,'stated')}
+ ];
+ const before=JSON.stringify(programs),query=parseQuery('化学专业，雅思6分能去的项目');
+ assert.deepEqual(query.majors,['化学']);assert.equal(query.exam,'IELTS Academic Module');assert.equal(query.maxScore,6);assert.deepEqual(query.unsupported,[]);
+ for(const input of [programs,programs.map(presentProgramMajors)]){
+  const answer=queryPrograms(query,input);
+  assert.deepEqual(answer.matched.map(p=>p.id),['chemistry-6','chemistry-no-minimum']);
+  assert.deepEqual(answer.uncertain.map(p=>p.id),['chemistry-unknown','chemistry-inferred']);
+  assert.match(answer.uncertain[0].reasons.join(' '),/无法确认 6 分是否达到语言要求/);
+  assert.match(answer.uncertain[1].reasons.join(' '),/专业根据已有项目名称／方向归类，待核对/);
+  assert.doesNotMatch(answer.matched.flatMap(p=>p.reasons).join(' '),/无法确认/);
+ }
+ assert.equal(JSON.stringify(programs),before);
 });
 
 test('query combines major, intake and score without changing eligibility rules',()=>{
